@@ -106,11 +106,14 @@ html = '''<!DOCTYPE html>
      "dagunya kok panjang" (~67pt kosong, inset-nya 34pt). Sekarang jarak garis
      home diukur di sini (#ukurAman) dan dikirim ke dashboard (pesan "inset"),
      yang menjadikannya ruang DI DALAM bilah bawahnya. */
-  iframe {
-    position: fixed; left: 0; width: 100%;
+  /* top+bottom lewat DIV pembungkus: iframe elemen "replaced", top+bottom tidak
+     meregangkannya (tingginya jatuh ke bawaan 150px -- terukur sesudah
+     deploy pertama perbaikan ini). */
+  #bingkai {
+    position: fixed; left: 0; right: 0;
     top: env(safe-area-inset-top, 0px); bottom: 0;
-    border: 0; display: block;
   }
+  iframe { width: 100%; height: 100%; border: 0; display: block; }
   #ukurAman { position: fixed; left: 0; bottom: 0; width: 0; height: env(safe-area-inset-bottom, 0px); visibility: hidden; pointer-events: none; }
   #muat {
     position: fixed; inset: 0; z-index: 2; background: #000; color: #fff;
@@ -196,9 +199,9 @@ html = '''<!DOCTYPE html>
 <button type="button" class="tutup" id="kameraTutup" aria-label="Tutup kamera">&times;</button>
 </div>
 <div id="ukurAman" aria-hidden="true"></div>
-<iframe id="dasbor" src="''' + EXEC + '''"
+<div id="bingkai"><iframe id="dasbor" src="''' + EXEC + '''"
         title="Padma Group"
-        allow="camera; clipboard-read; clipboard-write; fullscreen; geolocation"></iframe>
+        allow="camera; clipboard-read; clipboard-write; fullscreen; geolocation"></iframe></div>
 <script>
 /* Pembungkus Padma Group (2026-09-24). Layar muat hitam = laser mengukir logo
    Padma dan FirstJet bersamaan, SEKALI (~14,4 dtk), dilepas waktu
