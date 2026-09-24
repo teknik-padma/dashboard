@@ -9,9 +9,10 @@ OUT = sys.argv[1]
 ALAT = os.path.dirname(os.path.abspath(__file__))
 
 # Dua logo dijiplak dari gambar aslinya (alat/logo-*.{jpg,png}, dikirim pemilik
-# 2026-09-24), tinggi sama 100 satuan. Padma diukir di tengah, lalu bergeser
-# ke kiri (GESER), FirstJet diukir di kanannya. Laser = garis tepi (kontur),
-# lalu isi diarsir baris demi baris.
+# 2026-09-24), tinggi sama 100 satuan, berdampingan (Padma digeser GESER ke
+# kiri). Keduanya diukir BERSAMAAN sejak awal, dua titik laser -- dulu Padma
+# dulu lalu geser, tapi boot cepat memotong FirstJet ("login ya login aja").
+# Laser = garis tepi (kontur), lalu isi diarsir baris demi baris.
 PADMA = jiplak(os.path.join(ALAT, 'logo-padma.jpg'), 'terang', 100, 0, 'luas')
 FJ = jiplak(os.path.join(ALAT, 'logo-firstjet.png'), 'putih', 100, 65, 'dekat')
 # IoU Padma ~0,92, bukan ~0,98: gambar aslinya memotong cincin ~2,7 px di
@@ -29,18 +30,18 @@ def logo_svg(kelas, L, isi):
             '<clipPath id="arsir-%s"><rect class="tirai" x="-200" y="-60" width="400" height="0"/></clipPath>'
             '<path class="isi" fill="%s" fill-rule="evenodd" clip-path="url(#arsir-%s)" d="%s"/>'
             '<g class="tepi" fill="none" stroke="currentColor" stroke-width=".8" stroke-linejoin="round" opacity="0">%s</g>'
+            '<circle class="halo" r="3.2" fill="#fff" opacity="0"/><circle class="titik" r="1.1" fill="#fff" opacity="0"/>'
             '</g>') % (kelas, kelas, isi, kelas, L['isi'], gores)
 
 
 # Padma putih polos seperti FirstJet (pemilik: "putih aja, jangan abu"; warna
 # perak gambar aslinya tidak dipakai).
 svg = ('<svg id="laser" viewBox="%d %d %d %d" aria-hidden="true">' % VB
-       + '<g id="gPadma" transform="translate(0 0)">' + logo_svg('padma', PADMA, '#FFFFFF') + '</g>'
+       + '<g transform="translate(%s 0)">' % GESER + logo_svg('padma', PADMA, '#FFFFFF') + '</g>'
        + logo_svg('firstjet', FJ, '#FFFFFF')
-       + '<circle class="halo" r="3.2" fill="#fff" opacity="0"/><circle class="titik" r="1.1" fill="#fff" opacity="0"/>'
        + '</svg>')
 LEBAR_PX = 320
-DATA_LASER = json.dumps({'geser': GESER,
+DATA_LASER = json.dumps({
                          'baris': [PADMA['baris'], FJ['baris']]}, separators=(',', ':'))
 
 EXEC = 'https://script.google.com/macros/s/AKfycbzBRPeuPWoL3UdErFpn9WngpqQNiqvf9zH0dOhAsNEGlI1s9Uhm0XIGkWwalLctpwwR/exec'
@@ -117,7 +118,7 @@ html = '''<!DOCTYPE html>
         allow="camera; clipboard-read; clipboard-write; fullscreen; geolocation"></iframe>
 <script>
 /* Pembungkus Padma Group (2026-09-24). Layar muat hitam = laser mengukir logo
-   Padma, bergeser ke kiri, lalu logo FirstJet, SEKALI (~8,2 dtk), dilepas waktu
+   Padma dan FirstJet bersamaan, SEKALI (~8,4 dtk), dilepas waktu
    dashboard mengirim "siap" (postMessage). Pesan hanya diterima dari domain
    Google. Jaring pengaman 25 dtk; ?tahan=1 menahan layar ini (uji). */
 (function () {
@@ -179,19 +180,17 @@ html = '''<!DOCTYPE html>
     });
   }
 
-  /* Laser, SEKALI (2026-09-24): Padma diukir di tengah (garis tepi, lalu isi
-     diarsir baris demi baris), bergeser ke kiri, lalu FirstJet diukir di
-     kanannya; sesudah itu diam sampai "siap". Luncur antar-goresan 0,35 x
+  /* Laser, SEKALI (2026-09-24): Padma dan FirstJet diukir bersamaan, satu
+     titik laser per logo (garis tepi 5 dtk, lalu isi diarsir 3 dtk -- dulu 2,6 +
+     1,3 dtk, pemilik: "ngebut sekali"); sesudah itu diam sampai "siap". Luncur antar-goresan 0,35 x
      jarak dengan titik mati, seperti agLaserMulai_ di Index.html. */
   var D = ''' + DATA_LASER + ''';
   var svg = document.getElementById('laser');
-  var titik = svg.querySelector('.titik'), halo = svg.querySelector('.halo');
-  var gPadma = document.getElementById('gPadma');
   var JADWAL = [  // ms sejak halaman dibuka
-    { tepi: [0, 2600], arsir: [2600, 3900], logo: svg.querySelector('.padma') },
-    { tepi: [5000, 7200], arsir: [7200, 8200], logo: svg.querySelector('.firstjet') }
+    { tepi: [0, 5000], arsir: [5000, 8000], logo: svg.querySelector('.padma') },
+    { tepi: [0, 5000], arsir: [5000, 8000], logo: svg.querySelector('.firstjet') }
   ];
-  var GESER_MS = [4300, 5000], PUDAR_MS = 400, AKHIR = 8200 + PUDAR_MS;
+  var PUDAR_MS = 400, AKHIR = 8000 + PUDAR_MS;
   JADWAL.forEach(function (J, n) {
     J.gores = Array.prototype.slice.call(J.logo.querySelectorAll('.gores'));
     J.tirai = J.logo.querySelector('.tirai');
@@ -200,6 +199,7 @@ html = '''<!DOCTYPE html>
        yang digambar tidak persis sama -> tanpa ini potongan garis FirstJet sudah
        tampil sebelum gilirannya (terlihat di pratinjau). */
     J.tepiG = J.logo.querySelector('.tepi');
+    J.titik = [J.logo.querySelector('.titik'), J.logo.querySelector('.halo')];
     J.pj = J.gores.map(function (g) {
       g.setAttribute('pathLength', 1); g.style.strokeDasharray = '1 2'; g.style.strokeDashoffset = 1;
       return g.getTotalLength();
@@ -266,19 +266,16 @@ html = '''<!DOCTYPE html>
   }
   (function langkah() {
     if (!jalan) return;
-    var dt = Date.now() - mulai, pos = null;
+    var dt = Date.now() - mulai;
     JADWAL.forEach(function (J) {
       var pt = jalur(dt, J.tepi);
-      pos = tepi(J, pt) || pos;
-      pos = arsir(J, jalur(dt, J.arsir)) || pos;
+      var pt2 = tepi(J, pt), pos = arsir(J, jalur(dt, J.arsir)) || pt2;  // dua-duanya selalu dijalankan (tirai)
       // garis tepi: tak tampil sebelum gilirannya, pudar 400 ms sesudah isi penuh
       J.tepiG.style.opacity = pt > 0 ? 1 - jalur(dt, [J.arsir[1], J.arsir[1] + PUDAR_MS]) : 0;
-    });
-    var g = mulus(jalur(dt, GESER_MS)) * D.geser;
-    gPadma.setAttribute('transform', 'translate(' + g.toFixed(2) + ' 0)');
-    [titik, halo].forEach(function (c) {
-      if (pos) { c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y); c.setAttribute('opacity', c === halo ? 0.45 : 1); }
-      else c.setAttribute('opacity', 0);
+      J.titik.forEach(function (c, i) {
+        if (pos) { c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y); c.setAttribute('opacity', i ? 0.45 : 1); }
+        else c.setAttribute('opacity', 0);
+      });
     });
     if (dt >= AKHIR) return;
     berikut(langkah);
