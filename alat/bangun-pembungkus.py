@@ -119,10 +119,13 @@ EXEC = 'https://script.google.com/macros/s/AKfycbzBRPeuPWoL3UdErFpn9WngpqQNiqvf9
 TERANG_BILAH, GELAP_BILAH = '#FFFFFF', '#16181C'
 # Iframe TANPA COOKIE (credentialless, Chrome): obat "Maaf, saat ini tidak dapat
 # membuka file" di HP dengan beberapa akun Google (terbukti di HP pemilik lewat
-# tanpa-cookie.padmagroup.pages.dev, 2026-09-24). NYALA di situs utama sejak
-# 2026-09-25 (pemilik: "tanpa cookie situs utama gas", masih kena error Google).
-# Token titipan sudah terkumpul sejak v694; antrean/draf menyusul dititipkan.
-TANPA_COOKIE = True
+# tanpa-cookie.padmagroup.pages.dev, 2026-09-24). Sempat NYALA di situs utama
+# 2026-09-25 lalu DIMATIKAN LAGI hari yang sama: iframe credentialless memakai
+# cache HTTP sementara, jadi tiap buka/muat ulang mengunduh ulang ~1,3 MB dari
+# Google ("perbedaan loadingnya signifikan"). Pemilik memilih cookie + teknisi
+# diberi tahu cara mengganti akun Google; situs tanpa-cookie tetap cadangan
+# (dibangun dari SALINAN skrip ini dengan True). Titipan antrean/draf tetap aktif.
+TANPA_COOKIE = False
 
 html = '''<!DOCTYPE html>
 <html lang="id">
