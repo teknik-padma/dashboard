@@ -66,9 +66,30 @@
     opacity: 0; visibility: hidden; transition: opacity .3s ease; cursor: pointer;
     -webkit-tap-highlight-color: transparent;
   }
-  #muat.siap .lanjut { opacity: .9; visibility: visible; }
+  #muat.siap .lanjut { opacity: .95; visibility: visible; }
+  /* Tidak diam (diminta "jangan idle, ada light animation"): kilau menyapu
+     tulisan + cincin cahaya berdenyut. Hanya transform/opacity, jadi digerakkan
+     compositor dan tidak ikut tersendat waktu dashboard sibuk dimuat. */
+  .lanjut { position: relative; overflow: hidden; isolation: isolate; }
+  .lanjut::after {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .30) 50%, transparent 70%);
+    transform: translateX(-130%);
+  }
+  .lanjut::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .55), 0 0 18px rgba(255, 255, 255, .35);
+    opacity: 0;
+  }
+  #muat.siap .lanjut::after { animation: kilau 2.6s ease-in-out infinite; }
+  #muat.siap .lanjut::before { animation: denyut 2.6s ease-in-out infinite; }
+  @keyframes kilau { 0% { transform: translateX(-130%); } 55%, 100% { transform: translateX(130%); } }
+  @keyframes denyut { 0%, 100% { opacity: 0; } 40% { opacity: 1; } }
   #muat.siap { cursor: pointer; }
-  @media (prefers-reduced-motion: reduce) { #muat { transition: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    #muat { transition: none; }
+    #muat.siap .lanjut::after, #muat.siap .lanjut::before { animation: none; }
+  }
 </style>
 </head>
 <body>
@@ -177,6 +198,16 @@
       g.setAttribute('pathLength', 1); g.style.strokeDasharray = '1 2'; g.style.strokeDashoffset = 1;
       return g.getTotalLength();
     });
+    /* Tabel titik tiap 0,8 satuan, dihitung SEKALI. Dulu getPointAtLength
+       dipanggil tiap frame pada path ribuan huruf -- ikut membuat laser
+       "kadang patah" di HP, bersama dashboard yang sedang dimuat di utas yang
+       sama (iframe lintas situs di Chrome Android sering satu proses). */
+    J.tabel = J.gores.map(function (g, i) {
+      var n = Math.max(2, Math.ceil(J.pj[i] / 0.8)), t = new Float32Array(2 * (n + 1));
+      for (var k = 0; k <= n; k++) { var q = g.getPointAtLength(J.pj[i] * k / n); t[2 * k] = q.x; t[2 * k + 1] = q.y; }
+      return t;
+    });
+    J.offLama = J.gores.map(function () { return 1; });
     J.ruas = []; J.total = 0;
     J.gores.forEach(function (g, i) {
       if (i > 0) {
@@ -197,13 +228,19 @@
   function mulus(x) { return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
   function jalur(dt, r) { return Math.max(0, Math.min(1, (dt - r[0]) / (r[1] - r[0]))); }
 
+  function titikDi(t, f) {  // interpolasi linear di tabel titik
+    var n = t.length / 2 - 1, x = f * n, k = Math.min(n - 1, Math.floor(x)), r = x - k;
+    return { x: t[2 * k] + (t[2 * k + 2] - t[2 * k]) * r, y: t[2 * k + 1] + (t[2 * k + 3] - t[2 * k + 1]) * r };
+  }
   function tepi(J, p) {  // -> posisi titik laser, atau null (mati/diam)
     var sisa = J.total * mulus(p), pos = null, aktif = p > 0 && p < 1;
     J.ruas.forEach(function (s) {
       var ambil = Math.max(0, Math.min(s.L, sisa));
       if (!s.luncur) {
-        J.gores[s.i].style.strokeDashoffset = 1 - ambil / s.L;
-        if (aktif && ambil > 0 && ambil < s.L) pos = J.gores[s.i].getPointAtLength(ambil);
+        // tulis hanya kalau berubah: goresan yang sudah/belum jalan tidak disentuh
+        var off = 1 - ambil / s.L;
+        if (off !== J.offLama[s.i]) { J.gores[s.i].style.strokeDashoffset = off; J.offLama[s.i] = off; }
+        if (aktif && ambil > 0 && ambil < s.L) pos = titikDi(J.tabel[s.i], ambil / s.L);
       }
       sisa -= ambil;
     });
