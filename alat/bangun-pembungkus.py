@@ -23,7 +23,9 @@ GESER = -62.5
 # Kotak pandang sedikit lebih lebar/tinggi dari logonya (dulu memuat lencana
 # biru FirstJet; lencananya dibuang 2026-09-24, ukuran dibiarkan supaya logo
 # tidak berubah besar).
-VB = (-118, -64, 248, 128)
+# Diketengahkan 2026-09-25 (dulu x -118: logonya -112,4..112,6, jadi margin
+# kiri 5,6 dan kanan 17,4 satuan -- terlihat waktu logonya dibesarkan).
+VB = (-124, -64, 248, 128)
 assert PADMA['kotak'][0] + GESER > VB[0] and FJ['kotak'][2] < VB[0] + VB[2], (PADMA['kotak'], FJ['kotak'])
 
 
@@ -55,7 +57,13 @@ svg = ('<svg id="laser" viewBox="%d %d %d %d" aria-hidden="true">' % VB
        + '<g transform="translate(%s 0)">' % GESER + logo_svg('padma', PADMA, '#FFFFFF') + '</g>'
        + logo_svg('firstjet', FJ, '#FFFFFF')
        + '</svg>')
-LEBAR_PX = 320
+# UKURAN = SPLASH ANDROID (2026-09-25, "ukuran logo padma di awal loading
+# disamain dengan logo pas animasi laser"). Splash Android 12+ menggambar ikon
+# maskable di kanvas 240 dp dan cincin Padma di ikon itu 59% (bangun-ikon.py,
+# terukur) -> ~142 px. Cincin di sini 100 dari 248 satuan, jadi kotaknya
+# 142 x 248 / 100 = 352 px; dulu 320 px (~129 px, 12% lebih kecil). Dibatasi
+# 94vw: HP 360 px jadi ~136 px, FirstJet tetap ~16 px dari tepi.
+LEBAR_PX, LEBAR_VW = 352, 94
 
 # POLA LOGO CUSTOMER (2026-09-25, diminta "diganti logo2 customer saja yang
 # dibackground ... idle aja cuma ada cahaya jalan2"; menggantikan pola
@@ -168,7 +176,7 @@ html = '''<!DOCTYPE html>
     transition: opacity .55s ease;
   }
   #muat.lepas { opacity: 0; pointer-events: none; }
-  #laser { width: min(''' + str(LEBAR_PX) + '''px, 86vw); height: auto; aspect-ratio: ''' + '%d / %d' % (VB[2], VB[3]) + '''; overflow: visible; }
+  #laser { width: min(''' + str(LEBAR_PX) + '''px, ''' + str(LEBAR_VW) + '''vw); height: auto; aspect-ratio: ''' + '%d / %d' % (VB[2], VB[3]) + '''; overflow: visible; }
   #laser .halo { filter: blur(1.4px); }
   .putus {
     margin-top: 18px; font: 600 13px/1.4 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
