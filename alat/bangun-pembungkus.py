@@ -1,6 +1,6 @@
 """Membangun halaman pembungkus Padma Group (GitHub Pages teknik-padma/dashboard).
 Pakai: python bangun-pembungkus.py <folder repo pembungkus>
-Menulis index.html, manifest.json, sw.js (ikon dibuat terpisah)."""
+Menulis index.html, manifest.json, sw.js, favicon.svg (ikon PNG: alat/bangun-ikon.py)."""
 import json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from jiplak_logo import jiplak
@@ -150,6 +150,28 @@ html = '''<!DOCTYPE html>
   @keyframes kilau { 0% { transform: translateX(-130%); } 55%, 100% { transform: translateX(130%); } }
   @keyframes denyut { 0%, 100% { opacity: 0; } 40% { opacity: 1; } }
   #muat.siap { cursor: pointer; }
+  /* Kamera Scan QR untuk dashboard (2026-09-24): iframe Apps Script tidak
+     diberi izin kamera oleh bingkai Google, halaman ini boleh. */
+  #kamera {
+    position: fixed; inset: 0; z-index: 3; background: #000; color: #fff;
+    display: none; font: 600 14px/1.4 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  #kamera.buka { display: block; }
+  #kamera video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  #kamera .bingkai {
+    position: absolute; left: 50%; top: 50%; width: min(64vw, 280px); aspect-ratio: 1;
+    transform: translate(-50%, -50%); border: 2px solid rgba(255, 255, 255, .85); border-radius: 18px;
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .45);
+  }
+  #kamera .petunjuk {
+    position: absolute; left: 16px; right: 16px; bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+    text-align: center;
+  }
+  #kamera .tutup {
+    position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px;
+    width: 44px; height: 44px; border-radius: 999px; border: 0; background: rgba(0, 0, 0, .55);
+    color: #fff; font-size: 22px; line-height: 44px; cursor: pointer;
+  }
   @media (prefers-reduced-motion: reduce) {
     #muat { transition: none; }
     #muat.siap .lanjut::after, #muat.siap .lanjut::before { animation: none; }
@@ -161,6 +183,12 @@ html = '''<!DOCTYPE html>
 ''' + svg + '''
 <button type="button" class="lanjut" id="lanjut">Ketuk untuk melanjutkan</button>
 <div class="putus">Tidak ada koneksi internet. Dashboard terbuka otomatis begitu tersambung.</div>
+</div>
+<div id="kamera" role="dialog" aria-label="Scan QR Mesin">
+<video id="kameraVideo" playsinline muted></video>
+<div class="bingkai" aria-hidden="true"></div>
+<div class="petunjuk" id="kameraPetunjuk">Arahkan kamera ke QR di stiker mesin.</div>
+<button type="button" class="tutup" id="kameraTutup" aria-label="Tutup kamera">&times;</button>
 </div>
 <iframe id="dasbor" src="''' + EXEC + '''"
         title="Padma Group"
@@ -208,7 +236,109 @@ html = '''<!DOCTYPE html>
       warnaBilah();
     }
     if (d.jenis === 'siap') { siap = true; siapLanjut(); }
+    /* Dijawab tiap pesan tema (tiap dashboard dimuat): "ada kamera di sini".
+       Dashboard yang mendengarnya memakai kamera halaman ini untuk Scan QR. */
+    if (d.jenis === 'tema' && e.source && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: true }, asal); } catch (err) {}
+    }
+    if (d.jenis === 'pindaiQr' && typeof d.id === 'string' && e.source) kameraBuka(e.source, asal, d.id);
   });
+
+  /* KAMERA SCAN QR (2026-09-24). Dashboard meminta lewat postMessage, halaman
+     ini membuka kamera belakang, membaca QR (BarcodeDetector, kalau tidak ada
+     jsQR 1.4.0 dari jsDelivr, sama dengan dashboard), lalu mengirim
+     TEKS:... / BATAL / IZIN / GAGAL ke id yang diminta. */
+  var JSQR = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+  var JSQR_SRI = 'sha384-hStSInNIZ8ljtOVrmrgf7zdHMapaLBWoSnPTtF0nzsybp4+LuhDz6sHuEVpWIX8o';
+  var kam = { el: document.getElementById('kamera'), video: document.getElementById('kameraVideo'),
+              stream: null, minta: null, jam: 0, detektor: undefined, jsqr: null, kanvas: null };
+  function kameraJawab(hasil) {
+    var m = kam.minta;
+    kam.minta = null;
+    kameraMati();
+    if (m) { try { m.sumber.postMessage({ padma: 1, jenis: 'hasilPindai', id: m.id, hasil: hasil }, m.asal); } catch (err) {} }
+  }
+  function kameraMati() {
+    if (kam.jam) { clearTimeout(kam.jam); kam.jam = 0; }
+    if (kam.stream) { kam.stream.getTracks().forEach(function (t) { try { t.stop(); } catch (err) {} }); kam.stream = null; }
+    kam.video.srcObject = null;
+    kam.el.classList.remove('buka');
+  }
+  function kameraDetektor() {
+    if (kam.detektor !== undefined) return Promise.resolve(kam.detektor);
+    if (!('BarcodeDetector' in window)) { kam.detektor = null; return Promise.resolve(null); }
+    var f = BarcodeDetector.getSupportedFormats ? BarcodeDetector.getSupportedFormats() : Promise.resolve(['qr_code']);
+    return f.then(function (x) {
+      kam.detektor = (x || []).indexOf('qr_code') !== -1 ? new BarcodeDetector({ formats: ['qr_code'] }) : null;
+      return kam.detektor;
+    }).catch(function () { kam.detektor = null; return null; });
+  }
+  function kameraJsqr() {
+    if (window.jsQR) return Promise.resolve(window.jsQR);
+    if (kam.jsqr) return kam.jsqr;
+    kam.jsqr = new Promise(function (beres, gagal) {
+      var s = document.createElement('script');
+      s.src = JSQR; s.integrity = JSQR_SRI; s.crossOrigin = 'anonymous';
+      s.onload = function () { window.jsQR ? beres(window.jsQR) : gagal(new Error('jsQR kosong')); };
+      s.onerror = function () { kam.jsqr = null; gagal(new Error('Pembaca QR gagal dimuat. Periksa internet.')); };
+      document.head.appendChild(s);
+    });
+    return kam.jsqr;
+  }
+  function kameraBaca() {
+    var v = kam.video;
+    return kameraDetektor().then(function (det) {
+      if (det) return det.detect(v).then(function (h) { return (h && h[0] && h[0].rawValue) || ''; });
+      return kameraJsqr().then(function (jsQR) {
+        var sk = Math.min(1, 720 / Math.max(v.videoWidth, v.videoHeight));
+        var w = Math.max(1, Math.round(v.videoWidth * sk)), h = Math.max(1, Math.round(v.videoHeight * sk));
+        var k = kam.kanvas || (kam.kanvas = document.createElement('canvas'));
+        k.width = w; k.height = h;
+        var cx = k.getContext('2d', { willReadFrequently: true });
+        cx.drawImage(v, 0, 0, w, h);
+        var r = jsQR(cx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' });
+        return (r && r.data) || '';
+      });
+    });
+  }
+  /* setTimeout, bukan rAF: rAF bisa tidak pernah datang (tab tanpa komposit). */
+  function kameraPutar() {
+    kam.jam = 0;
+    if (!kam.stream || !kam.minta) return;
+    var v = kam.video;
+    if (v.readyState < 2 || !v.videoWidth) { kam.jam = setTimeout(kameraPutar, 200); return; }
+    kameraBaca().then(function (teks) {
+      if (!kam.stream || !kam.minta) return;
+      if (teks) { kameraJawab('TEKS:' + teks); return; }
+      kam.jam = setTimeout(kameraPutar, 250);
+    }).catch(function (err) {
+      document.getElementById('kameraPetunjuk').textContent = (err && err.message) || 'Pembaca QR bermasalah.';
+      kam.jam = setTimeout(kameraPutar, 1500);
+    });
+  }
+  function kameraBuka(sumber, asal, id) {
+    if (kam.minta) kameraJawab('BATAL');  // permintaan lama digantikan
+    kam.minta = { sumber: sumber, asal: asal, id: id };
+    document.getElementById('kameraPetunjuk').textContent = 'Arahkan kamera ke QR di stiker mesin.';
+    kam.el.classList.add('buka');
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+      .then(function (stream) {
+        if (!kam.minta || kam.minta.id !== id) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+        kam.stream = stream;
+        kam.video.srcObject = stream;
+        var main = kam.video.play();
+        if (main && main.catch) main.catch(function () {});
+        kam.jam = setTimeout(kameraPutar, 300);
+      })
+      .catch(function (err) {
+        if (!kam.minta || kam.minta.id !== id) return;
+        kameraJawab(err && (err.name === 'NotAllowedError' || err.name === 'SecurityError') ? 'IZIN' : 'GAGAL');
+      });
+  }
+  document.getElementById('kameraTutup').addEventListener('click', function () { kameraJawab('BATAL'); });
+  /* Pindah aplikasi / layar mati: kamera dimatikan, dashboard diberi BATAL
+     supaya tombol "Pindai lagi" muncul di sana. */
+  document.addEventListener('visibilitychange', function () { if (document.hidden && kam.minta) kameraJawab('BATAL'); });
   /* Masuk = laser selesai DAN dashboard siap. Siap lebih dulu -> tombol lanjut
      (atau ketuk di mana saja); laser selesai lebih dulu -> masuk begitu siap.
      Jaring 25 dtk tetap: "siap" bisa tidak pernah datang. */
@@ -378,8 +508,9 @@ manifest = {
     "icons": [
         {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
         {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-        {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
-        {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+        # ikon maskable terpisah (cincin 80%, zona aman Android), lihat alat/bangun-ikon.py
+        {"src": "icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+        {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
     ]
 }
 
@@ -387,8 +518,8 @@ sw = '''/* Service worker pembungkus Padma Group. Hanya berkas pembungkus (situs
    sendiri) yang di-cache; dashboard di script.google.com TIDAK pernah disentuh.
    Jaringan dulu supaya pembaruan langsung terpakai; cache kalau offline.
    Naikkan VERSI tiap berkas di BERKAS berubah nama. */
-const VERSI = 'padma-pembungkus-v3';
-const BERKAS = ['./', './index.html', './manifest.json', './favicon.svg', './icon-192.png', './icon-512.png'];
+const VERSI = 'padma-pembungkus-v4';
+const BERKAS = ['./', './index.html', './manifest.json', './favicon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSI).then((c) => c.addAll(BERKAS)).then(() => self.skipWaiting()));
