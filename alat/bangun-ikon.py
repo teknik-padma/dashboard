@@ -3,9 +3,10 @@ memperbesar gambar lama). Pakai: python bangun-ikon.py <folder repo pembungkus>
 
 2026-09-24, dilaporkan "logo di hape pas di install kekecilan": ikon lama dari
 ikon launcher APK, cincinnya cuma ~42% lebar ikon. Sekarang:
-  icon-*.png           purpose "any"      cincin 90% lebar
-  icon-maskable-*.png  purpose "maskable" cincin 80% = pas zona aman masker
-                       Android (lingkaran 80%), jadi tidak terpotong launcher.
+  icon-*.png           purpose "any"      cincin 80% lebar
+  icon-maskable-*.png  purpose "maskable" cincin 68%: zona aman Android lingkaran
+                       80%, dan 80% pas di batasnya ternyata terpotong di HP
+                       (dilaporkan "kepotong ujung2nya") -- disisakan ruang.
 Latar #000 (sama dengan layar muat).
 
 WARNANYA DARI IKON LAMA, TEPINYA DARI VEKTOR (2026-09-24, dilaporkan "shadow2nya
@@ -75,6 +76,6 @@ def ikon(ukuran, porsi):
 
 
 for uk in (192, 512):
-    cv2.imwrite(os.path.join(OUT, 'icon-%d.png' % uk), ikon(uk, 0.90))
-    cv2.imwrite(os.path.join(OUT, 'icon-maskable-%d.png' % uk), ikon(uk, 0.80))
+    cv2.imwrite(os.path.join(OUT, 'icon-%d.png' % uk), ikon(uk, 0.80))
+    cv2.imwrite(os.path.join(OUT, 'icon-maskable-%d.png' % uk), ikon(uk, 0.68))
 print('ok')
