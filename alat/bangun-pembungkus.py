@@ -477,21 +477,14 @@ html = '''<!DOCTYPE html>
   /* Masuk = laser selesai DAN dashboard siap. Siap lebih dulu -> jam laser
      dipercepat (sisa ukiran dalam SUSUL_MS), lalu pudar sendiri; laser selesai
      lebih dulu -> masuk begitu siap. Jaring 25 dtk tetap. */
-  function siapLanjut() {
-    if (animSelesai) { lepas(); return; }
-    if (susul) return;
-    var dt = waktu();
-    susul = { t0: Date.now(), dt0: dt, laju: Math.max(1, (AKHIR - dt) / SUSUL_MS) };
-  }
+  /* SATU LAYAR MUAT, DILEPAS SEKETIKA (2026-09-25, "loading dashboard (memuat)
+     tuh dihapus saja"). Sempat dilepas di iframe `load` (9849b1d) -- lalu kartu
+     "Mengecek sesi / Menyiapkan dashboard" dashboard tampil sebagai layar muat
+     KEDUA. Sekarang laser menutup sampai "siap" (dashboard jadi, atau form
+     login) lalu pudar .25 di tempat -- tanpa menyusul ukiran (dulu +1,1 dtk
+     + pudar .55). Jaring 25 dtk tetap. */
+  function siapLanjut() { lepas(); }
   setTimeout(lepas, 25000);
-  /* INSTAN SEPERTI BUKA /exec LANGSUNG (2026-09-25, "kalo dari script google
-     instan ... bisa ga sih yg instan aja"). Dulu layar laser menunggu dashboard
-     SELESAI boot (sesi + data) lalu menyusul ukirannya ~1,1 dtk + pudar .55 --
-     loading bertahap yang terasa cepat di /exec tertutup layar hitam. Sekarang
-     dilepas begitu iframe `load`: halaman dashboard sudah tergambar (kartu
-     "Mengecek sesi..."), datanya menyusul di sana. Laser tinggal menutupi waktu
-     Google menyajikan halaman. Berhenti di tempat, tanpa menyusul ukiran. */
-  dasbor.addEventListener('load', function () { lepas(); });
 
   /* Tanpa internet: layar muat berkata begitu; tersambung lagi sebelum dashboard
      sempat siap -> iframe dimuat ulang (yang sudah siap tidak disentuh). */
