@@ -20,25 +20,40 @@ FJ = jiplak(os.path.join(ALAT, 'logo-firstjet.png'), 'putih', 100, 65, 'dekat')
 for nama, L, batas in (('padma', PADMA, 0.9), ('firstjet', FJ, 0.97)):
     assert L['iou'] > batas, (nama, L['iou'])
 GESER = -62.5
-VB = (-118, -56, 236, 112)
+# Lencana biru FirstJet (warna asli, lihat LENCANA) 120 x 120 berpusat di
+# FirstJet, jadi kotak pandang sedikit lebih lebar/tinggi dari logonya.
+LENCANA = (65 - 60, -60, 120, 120)
+VB = (-118, -64, 248, 128)
 assert PADMA['kotak'][0] + GESER > VB[0] and FJ['kotak'][2] < VB[0] + VB[2], (PADMA['kotak'], FJ['kotak'])
 
 
-def logo_svg(kelas, L, isi):
+def logo_svg(kelas, L, isi, bawah='', atas=''):
+    """bawah/atas: lapisan warna asli (class warna-lapis) di belakang/di atas isi."""
     gores = ''.join('<path class="gores" d="%s"/>' % d for d in L['gores'])
-    return ('<g class="%s">'
-            '<clipPath id="arsir-%s"><rect class="tirai" x="-200" y="-60" width="400" height="0"/></clipPath>'
-            '<path class="isi" fill="%s" fill-rule="evenodd" clip-path="url(#arsir-%s)" d="%s"/>'
+    return ('<g class="%s">' + bawah +
+            '<clipPath id="arsir-%s"><rect class="tirai" x="-200" y="-70" width="400" height="0"/></clipPath>'
+            '<path class="isi" fill="%s" fill-rule="evenodd" clip-path="url(#arsir-%s)" d="%s"/>' + atas +
             '<g class="tepi" fill="none" stroke="currentColor" stroke-width=".8" stroke-linejoin="round" opacity="0">%s</g>'
             '<circle class="halo" r="3.2" fill="#fff" opacity="0"/><circle class="titik" r="1.1" fill="#fff" opacity="0"/>'
             '</g>') % (kelas, kelas, isi, kelas, L['isi'], gores)
 
 
-# Padma putih polos seperti FirstJet (pemilik: "putih aja, jangan abu"; warna
-# perak gambar aslinya tidak dipakai).
+# Diukir putih polos ("putih aja, jangan abu"). WARNA ASLI baru muncul kalau
+# laser sudah selesai tapi dashboard BELUM siap ("kalau masih loading, logonya
+# dibuat berwarna; kalau sudah selesai loading langsung masuk"): Padma perak
+# (gambar aslinya terang di tengah ~205, gelap ke tepi ~155), FirstJet di atas
+# kotak biru aslinya (#094B84, diukur dari gambar) dengan F tetap putih.
+PERAK = ('<radialGradient id="perak" gradientUnits="userSpaceOnUse" cx="0" cy="6" r="58">'
+         '<stop offset="0" stop-color="#D2D2D2"/><stop offset=".5" stop-color="#B2B2B2"/>'
+         '<stop offset="1" stop-color="#8E8E8E"/></radialGradient>')
+lapis_perak = '<path class="warna-lapis" fill="url(#perak)" fill-rule="evenodd" d="%s"/>' % PADMA['isi']
+lapis_biru = '<rect class="warna-lapis" x="%s" y="%s" width="%s" height="%s" rx="16" fill="#094B84"/>' % LENCANA
+assert FJ['kotak'][0] > LENCANA[0] and FJ['kotak'][2] < LENCANA[0] + LENCANA[2]
+assert LENCANA[0] + LENCANA[2] < VB[0] + VB[2] and LENCANA[1] >= VB[1]
 svg = ('<svg id="laser" viewBox="%d %d %d %d" aria-hidden="true">' % VB
-       + '<g transform="translate(%s 0)">' % GESER + logo_svg('padma', PADMA, '#FFFFFF') + '</g>'
-       + logo_svg('firstjet', FJ, '#FFFFFF')
+       + '<defs>' + PERAK + '</defs>'
+       + '<g transform="translate(%s 0)">' % GESER + logo_svg('padma', PADMA, '#FFFFFF', atas=lapis_perak) + '</g>'
+       + logo_svg('firstjet', FJ, '#FFFFFF', bawah=lapis_biru)
        + '</svg>')
 LEBAR_PX = 320
 DATA_LASER = json.dumps({
@@ -100,6 +115,8 @@ html = '''<!DOCTYPE html>
   #muat.lepas { opacity: 0; pointer-events: none; }
   #laser { width: min(''' + str(LEBAR_PX) + '''px, 86vw); height: auto; aspect-ratio: ''' + '%d / %d' % (VB[2], VB[3]) + '''; overflow: visible; }
   #laser .halo { filter: blur(1.4px); }
+  #laser .warna-lapis { opacity: 0; transition: opacity .9s ease; }
+  #muat.warna #laser .warna-lapis { opacity: 1; }
   .putus {
     margin-top: 18px; font: 600 13px/1.4 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     opacity: .7; display: none;
@@ -336,7 +353,11 @@ html = '''<!DOCTYPE html>
         else c.setAttribute('opacity', 0);
       });
     });
-    if (dt >= AKHIR) { animSelesai = true; if (siap) lepas(); return; }
+    if (dt >= AKHIR) {
+      animSelesai = true;
+      if (siap) lepas(); else muat.classList.add('warna');  // masih memuat -> warna asli
+      return;
+    }
     berikut(langkah);
   })();
 })();
