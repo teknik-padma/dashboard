@@ -278,7 +278,7 @@ html = '''<!DOCTYPE html>
   var jalan = true, siap = false, animSelesai = false, mulai = Date.now();
   /* Jam laser: normal = ms sejak dibuka; sesudah "siap" dipercepat supaya sisa
      ukiran selesai dalam SUSUL_MS (tidak dipotong, tidak ditunggu). */
-  var SUSUL_MS = 1100, susul = null;
+  var SUSUL_MS = 600, susul = null;
   function waktu() {
     var kini = Date.now();
     return susul ? susul.dt0 + (kini - susul.t0) * susul.laju : kini - mulai;
@@ -477,13 +477,18 @@ html = '''<!DOCTYPE html>
   /* Masuk = laser selesai DAN dashboard siap. Siap lebih dulu -> jam laser
      dipercepat (sisa ukiran dalam SUSUL_MS), lalu pudar sendiri; laser selesai
      lebih dulu -> masuk begitu siap. Jaring 25 dtk tetap. */
-  /* SATU LAYAR MUAT, DILEPAS SEKETIKA (2026-09-25, "loading dashboard (memuat)
-     tuh dihapus saja"). Sempat dilepas di iframe `load` (9849b1d) -- lalu kartu
-     "Mengecek sesi / Menyiapkan dashboard" dashboard tampil sebagai layar muat
-     KEDUA. Sekarang laser menutup sampai "siap" (dashboard jadi, atau form
-     login) lalu pudar .25 di tempat -- tanpa menyusul ukiran (dulu +1,1 dtk
-     + pudar .55). Jaring 25 dtk tetap. */
-  function siapLanjut() { lepas(); }
+  /* SATU LAYAR MUAT, UKIRAN DISELESAIKAN CEPAT (2026-09-25; diminta "jgn dibuat
+     loading blink atau ada muter2 lagi setelah animasi laser. Mending animasi
+     lasernya dipercepat sampai selesai"). Laser menutup sampai "siap" -- yang
+     di dashboard v710 menunggu Home LENGKAP (angka, logbook, ikon Segarkan),
+     jadi tidak ada pemuat lain sesudahnya -- lalu sisa ukiran disusul dalam
+     SUSUL_MS dan pudar .25. Jaring 25 dtk tetap. */
+  function siapLanjut() {
+    if (animSelesai) { lepas(); return; }
+    if (susul) return;
+    var dt = waktu();
+    susul = { t0: Date.now(), dt0: dt, laju: Math.max(1, (AKHIR - dt) / SUSUL_MS) };
+  }
   setTimeout(lepas, 25000);
 
   /* Tanpa internet: layar muat berkata begitu; tersambung lagi sebelum dashboard
