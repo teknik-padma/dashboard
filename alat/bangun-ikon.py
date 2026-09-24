@@ -70,6 +70,25 @@ def ikon(ukuran, porsi):
     kanvas = np.zeros((n, n, 3), np.float32)
     o = (n - sisi) // 2
     kanvas[o:o + sisi, o:o + sisi] = cat
+    # CINCIN DICAT ULANG LEWAT KOORDINAT POLAR (2026-09-24, dilaporkan di layar
+    # splash "logo padma kepotong di ujung2nya"). Cincin ikon lama terpangkas
+    # datar di 0/90/180/270 derajat (jari-jari luar 104 lawan 107 di diagonal),
+    # jadi di ujung-ujung masker vektor catnya gelap. Tiap piksel cincin vektor
+    # kini mengambil warna cincin lama di SUDUT yang sama, dari pita r 100,5-
+    # 103,5 yang utuh di semua sudut -- kilau logamnya tetap asli.
+    yy, xx = np.mgrid[0:n, 0:n].astype(np.float32)
+    dx, dy = xx - n / 2 + 0.5, yy - n / 2 + 0.5
+    r = np.hypot(dx, dy)
+    luar = n * porsi / 2
+    dalam = luar * (100.0 / 107.3)
+    cincin = r > luar * 0.88  # bunga teratai terjauh ~0,75
+    t = np.clip((r - dalam) / (luar - dalam), 0, 1)
+    rs = 100.5 + t * 3.0
+    sud = np.arctan2(dy, dx)
+    peta_x = (255.5 + rs * np.cos(sud)).astype(np.float32)
+    peta_y = (254.5 + rs * np.sin(sud)).astype(np.float32)
+    polar = cv2.remap(LAMA, peta_x, peta_y, cv2.INTER_LINEAR)
+    kanvas = np.where(cincin[..., None], polar, kanvas)
     rgb = kanvas * (masker[..., None] / 255.0)
     kecil = cv2.resize(rgb.astype(np.float32), (ukuran, ukuran), interpolation=cv2.INTER_AREA)
     return np.clip(np.round(kecil), 0, 255).astype(np.uint8)
