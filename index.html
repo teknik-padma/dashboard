@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F5F7FB" id="warnaBilah">
 <title>Dashboard Padma Group</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@800&display=swap">
 <script>
 /* Tema diputuskan SEBELUM cat pertama: yang terakhir dikirim dashboard
    (localStorage halaman ini), kalau belum pernah -> tema perangkat. */
@@ -30,12 +32,20 @@
   }
   #muat {
     position: fixed; inset: 0; z-index: 2; background: var(--latar); color: var(--garis);
-    display: flex; align-items: center; justify-content: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
     transition: opacity .26s ease;
   }
   #muat.lepas { opacity: 0; pointer-events: none; }
   #laser { width: 104px; height: 104px; overflow: visible; }
-  @media (prefers-reduced-motion: reduce) { #muat { transition: none; } }
+  /* Tulisan merek muncul SESUDAH ukiran selesai; tempatnya dipegang sejak awal
+     supaya logo tidak bergeser naik waktu tulisannya datang. */
+  .merek {
+    margin-top: 22px; font: 800 15px/1 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    letter-spacing: .22em; padding-left: .22em;
+    opacity: 0; transform: translateY(6px); transition: opacity .6s ease, transform .6s ease;
+  }
+  #muat.selesai .merek { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { #muat, .merek { transition: none; } }
 </style>
 </head>
 <body>
@@ -44,24 +54,26 @@
     <g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path class="agl-gores" d="M-19.4 13.4C-18.0 14.0 -12.6 16.5 -11.3 17.1"/><path class="agl-gores" d="M-6.3 12.5C-6.6 11.4 -7.6 8.4 -8.2 6.3C-8.7 4.2 -9.3 1.0 -9.5 -0.1"/><path class="agl-gores" d="M-14.1 -3.9C-14.4 -4.1 -15.4 -5.1 -15.6 -5.4"/><path class="agl-gores" d="M-16.0 -5.5C-16.2 -5.7 -16.9 -6.4 -17.1 -6.6"/><path class="agl-gores" d="M9.0 -1.6C8.8 -1.0 8.8 0.2 8.2 1.9C7.6 3.7 5.9 7.9 5.5 9.1"/><path class="agl-gores" d="M17.6 15.4C17.3 15.7 18.9 15.3 15.6 17.1C12.3 18.8 1.5 24.3 -2.1 26.0C-5.7 27.7 -4.1 26.9 -6.0 27.3C-7.9 27.7 -11.5 28.3 -13.7 28.4C-15.9 28.5 -17.4 28.2 -19.1 27.9C-20.8 27.5 -21.7 27.3 -23.7 26.4C-25.7 25.5 -28.9 23.9 -31.1 22.5C-33.4 21.1 -36.1 19.0 -37.2 17.9C-38.3 16.7 -38.0 16.0 -37.6 15.4C-37.3 14.9 -36.5 14.8 -35.2 14.5C-33.9 14.2 -32.3 13.8 -29.6 13.7C-27.0 13.5 -21.1 14.0 -19.5 13.6C-17.9 13.2 -19.4 12.4 -20.2 11.3C-20.9 10.1 -22.9 8.5 -24.0 6.8C-25.1 5.1 -26.1 3.0 -26.8 1.0C-27.5 -1.0 -28.0 -3.1 -28.2 -5.1C-28.4 -7.1 -28.8 -10.3 -28.0 -11.2C-27.3 -12.1 -24.9 -10.9 -23.6 -10.5C-22.3 -10.1 -21.3 -9.5 -20.2 -8.9C-19.1 -8.2 -18.4 -8.0 -17.1 -6.7C-15.7 -5.4 -13.3 -2.4 -12.1 -1.3C-10.8 -0.2 -10.2 -0.2 -9.7 -0.2C-9.1 -0.2 -8.9 0.5 -8.6 -1.3C-8.3 -3.1 -8.4 -7.9 -7.9 -10.8C-7.5 -13.6 -6.8 -16.0 -5.9 -18.5C-5.0 -20.9 -3.4 -24.1 -2.4 -25.5C-1.4 -26.8 -0.3 -26.4 0.1 -26.6"/><path class="agl-gores" d="M0.2 -26.7C0.5 -26.5 1.3 -26.1 1.8 -25.6C2.3 -25.1 2.6 -24.9 3.3 -23.4C4.1 -22.0 5.5 -19.5 6.3 -17.1C7.1 -14.7 7.9 -11.7 8.2 -9.3C8.5 -6.9 8.0 -3.9 8.2 -2.6C8.3 -1.4 8.5 -1.7 9.0 -1.7C9.4 -1.7 9.8 -1.4 10.9 -2.4C12.0 -3.3 14.0 -6.0 15.5 -7.4C16.9 -8.7 18.5 -9.7 19.8 -10.5C21.1 -11.3 22.3 -11.8 23.3 -12.1C24.3 -12.4 25.2 -12.4 25.7 -12.4C26.2 -12.3 26.2 -12.6 26.3 -11.7C26.4 -10.8 26.6 -9.0 26.3 -7.0C26.0 -5.0 25.2 -2.0 24.4 0.3C23.6 2.6 22.5 4.7 21.4 6.7C20.3 8.6 18.3 10.6 17.6 11.9C16.9 13.3 17.1 14.2 17.1 14.8C17.1 15.3 17.1 15.3 17.6 15.3C18.1 15.4 18.8 15.4 20.2 15.0C21.6 14.7 24.3 13.8 25.9 13.4C27.4 13.1 28.0 13.0 29.6 13.0C31.3 13.0 34.5 13.2 35.6 13.4C36.7 13.6 35.7 14.3 36.3 14.2C36.8 14.2 38.5 13.4 39.0 13.3"/><path class="agl-gores" d="M36.3 14.4C36.1 14.8 36.0 16.2 35.6 17.1C35.1 17.9 34.5 18.6 33.6 19.6C32.6 20.6 31.4 22.0 29.9 23.1C28.4 24.3 26.1 25.7 24.5 26.5C23.0 27.3 21.9 27.5 20.6 27.9C19.3 28.2 17.9 28.4 16.7 28.5C15.5 28.7 14.7 28.7 13.3 28.5C12.0 28.4 9.4 27.9 8.6 27.7"/><path class="agl-gores" d="M15.4 49.7C14.8 49.8 13.2 50.3 12.1 50.6C11.0 50.8 9.9 51.1 8.7 51.3C7.6 51.5 6.5 51.6 5.4 51.7C4.2 51.8 3.1 51.9 2.0 52.0C0.8 52.0 -0.3 52.0 -1.4 52.0C-2.6 51.9 -3.7 51.9 -4.8 51.8C-6.0 51.7 -7.1 51.5 -8.2 51.3C-9.3 51.2 -10.4 51.0 -11.5 50.7C-12.6 50.5 -13.7 50.2 -14.8 49.8C-15.9 49.5 -17.0 49.2 -18.1 48.8C-19.1 48.4 -20.2 47.9 -21.2 47.5C-22.2 47.0 -23.3 46.5 -24.3 46.0C-25.3 45.5 -26.3 44.9 -27.2 44.3C-28.2 43.7 -29.1 43.1 -30.1 42.4C-31.0 41.8 -31.9 41.1 -32.8 40.4C-33.7 39.7 -34.5 38.9 -35.3 38.1C-36.2 37.4 -37.0 36.6 -37.8 35.7C-38.5 34.9 -39.3 34.1 -40.0 33.2C-40.7 32.3 -41.4 31.4 -42.1 30.5C-42.8 29.6 -43.4 28.7 -44.0 27.7C-44.6 26.7 -45.2 25.8 -45.7 24.8C-46.3 23.8 -46.8 22.7 -47.3 21.7C-47.7 20.7 -48.2 19.6 -48.6 18.6C-49.0 17.5 -49.3 16.4 -49.7 15.4C-50.0 14.3 -50.3 13.2 -50.6 12.1C-50.8 11.0 -51.1 9.9 -51.3 8.7C-51.5 7.6 -51.6 6.5 -51.7 5.4C-51.8 4.2 -51.9 3.1 -52.0 2.0C-52.0 0.8 -52.0 -0.3 -52.0 -1.4C-51.9 -2.6 -51.9 -3.7 -51.8 -4.8C-51.7 -6.0 -51.5 -7.1 -51.3 -8.2C-51.2 -9.3 -51.0 -10.4 -50.7 -11.5C-50.5 -12.6 -50.2 -13.7 -49.8 -14.8C-49.5 -15.9 -49.2 -17.0 -48.8 -18.1C-48.4 -19.1 -47.9 -20.2 -47.5 -21.2C-47.0 -22.2 -46.5 -23.3 -46.0 -24.3C-45.5 -25.3 -44.9 -26.3 -44.3 -27.2C-43.7 -28.2 -43.1 -29.1 -42.4 -30.1C-41.8 -31.0 -41.1 -31.9 -40.4 -32.8C-39.7 -33.7 -38.9 -34.5 -38.1 -35.3C-37.4 -36.2 -36.6 -37.0 -35.7 -37.8C-34.9 -38.5 -34.1 -39.3 -33.2 -40.0C-32.3 -40.7 -31.4 -41.4 -30.5 -42.1C-29.6 -42.8 -28.7 -43.4 -27.7 -44.0C-26.7 -44.6 -25.8 -45.2 -24.8 -45.7C-23.8 -46.3 -22.7 -46.8 -21.7 -47.3C-20.7 -47.7 -19.6 -48.2 -18.6 -48.6C-17.5 -49.0 -16.4 -49.3 -15.4 -49.7C-14.3 -50.0 -13.2 -50.3 -12.1 -50.6C-11.0 -50.8 -9.9 -51.1 -8.7 -51.3C-7.6 -51.5 -6.5 -51.6 -5.4 -51.7C-4.2 -51.8 -3.1 -51.9 -2.0 -52.0C-0.8 -52.0 0.3 -52.0 1.4 -52.0C2.6 -51.9 3.7 -51.9 4.8 -51.8C6.0 -51.7 7.1 -51.5 8.2 -51.3C9.3 -51.2 10.4 -51.0 11.5 -50.7C12.6 -50.5 13.7 -50.2 14.8 -49.8C15.9 -49.5 17.0 -49.2 18.1 -48.8C19.1 -48.4 20.2 -47.9 21.2 -47.5C22.2 -47.0 23.3 -46.5 24.3 -46.0C25.3 -45.5 26.3 -44.9 27.2 -44.3C28.2 -43.7 29.1 -43.1 30.1 -42.4C31.0 -41.8 31.9 -41.1 32.8 -40.4C33.7 -39.7 34.5 -38.9 35.3 -38.1C36.2 -37.4 37.0 -36.6 37.8 -35.7C38.5 -34.9 39.3 -34.1 40.0 -33.2C40.7 -32.3 41.4 -31.4 42.1 -30.5C42.8 -29.6 43.4 -28.7 44.0 -27.7C44.6 -26.7 45.2 -25.8 45.7 -24.8C46.3 -23.8 46.8 -22.7 47.3 -21.7C47.7 -20.7 48.2 -19.6 48.6 -18.6C49.0 -17.5 49.3 -16.4 49.7 -15.4C50.0 -14.3 50.3 -13.2 50.6 -12.1C50.8 -11.0 51.1 -9.9 51.3 -8.7C51.5 -7.6 51.6 -6.5 51.7 -5.4C51.8 -4.2 51.9 -3.1 52.0 -2.0C52.0 -0.8 52.0 0.3 52.0 1.4C51.9 2.6 51.9 3.7 51.8 4.8C51.7 6.0 51.5 7.1 51.3 8.2C51.2 9.3 51.0 10.4 50.7 11.5C50.5 12.6 50.2 13.7 49.8 14.8C49.5 15.9 49.2 17.0 48.8 18.1C48.4 19.1 47.9 20.2 47.5 21.2C47.0 22.2 46.5 23.3 46.0 24.3C45.5 25.3 44.9 26.3 44.3 27.2C43.7 28.2 43.1 29.1 42.4 30.1C41.8 31.0 41.1 31.9 40.4 32.8C39.7 33.7 38.9 34.5 38.1 35.3C37.4 36.2 36.6 37.0 35.7 37.8C34.9 38.5 34.1 39.3 33.2 40.0C32.3 40.7 31.4 41.4 30.5 42.1C29.6 42.8 28.7 43.4 27.7 44.0C26.7 44.6 25.8 45.2 24.8 45.7C23.8 46.3 22.7 46.8 21.7 47.3C20.7 47.7 19.6 48.2 18.6 48.6C17.5 49.0 15.9 49.5 15.4 49.7"/></g>
     <rect class="agl-titik" fill="currentColor" x="-2.5" y="-2.5" width="5" height="5"/>
   </svg>
+<div class="merek">PADMA GROUP</div>
 </div>
 <iframe id="dasbor" src="https://script.google.com/macros/s/AKfycbzBRPeuPWoL3UdErFpn9WngpqQNiqvf9zH0dOhAsNEGlI1s9Uhm0XIGkWwalLctpwwR/exec"
         title="Dashboard Padma Group"
         allow="camera; clipboard-read; clipboard-write; fullscreen; geolocation"></iframe>
 <script>
 /* Pembungkus Dashboard Padma Group (2026-09-24). Layar muat = laser mengukir
-   logo, kembar dashboard/APK (siklus 8000 ms: ukir 6000, tahan 1200, pudar 800),
+   logo SEKALI (6000 ms, gerak sama dengan dashboard/APK) lalu tulisan PADMA GROUP,
    dilepas waktu dashboard mengirim "siap" (postMessage). Pesan hanya diterima
-   dari domain Google. Jaring pengaman 25 dtk. */
+   dari domain Google. Jaring pengaman 25 dtk; ?tahan=1 menahan layar ini (uji). */
 (function () {
   var muat = document.getElementById('muat');
   var h = document.documentElement;
   var bilah = document.getElementById('warnaBilah');
   var jalan = true, mulai = Date.now();
+  var TAHAN = /[?&]tahan=1/.test(location.search);
 
   function simpan(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   function lepas() {
-    if (!jalan) return;
+    if (!jalan || TAHAN) return;
     jalan = false;
     muat.classList.add('lepas');
     setTimeout(function () { muat.style.display = 'none'; }, 300);
@@ -105,24 +117,38 @@
     ruas.push({ luncur: false, i: i, L: pj[i] }); total += pj[i];
   });
   function mulus(x) { return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
+  /* SEKALI, tidak berulang (diminta): ukir 6000 ms lalu logo diam + tulisan
+     PADMA GROUP sampai dashboard siap. Diputar rAF (selaras layar; dulu
+     setTimeout 30 ms = patah-patah), dengan setTimeout sebagai cadangan kalau
+     rAF tidak datang (tab di latar). */
+  var UKIR = 6000;
+  window.JEDA_LASER = [];
+  var terakhir = 0;
+  function berikut(fn) {
+    var sudah = false;
+    var jalankan = function () { if (!sudah) { sudah = true; fn(); } };
+    if (window.requestAnimationFrame) requestAnimationFrame(jalankan);
+    setTimeout(jalankan, 100);
+  }
   (function langkah() {
     if (!jalan) return;
-    var t = (Date.now() - mulai) % 8000, maju, op = 1;
-    if (t < 6000) maju = total * mulus(t / 6000);
-    else { maju = total; if (t >= 7200) op = 1 - (t - 7200) / 800; }
-    var sisa = maju, pos = null;
+    var kini = Date.now();
+    if (terakhir) window.JEDA_LASER.push(kini - terakhir);
+    terakhir = kini;
+    var t = Math.min(kini - mulai, UKIR);
+    var sisa = total * mulus(t / UKIR), pos = null;
     ruas.forEach(function (s) {
       var ambil = Math.max(0, Math.min(s.L, sisa));
       if (!s.luncur) {
         gores[s.i].style.strokeDashoffset = pj[s.i] - ambil;
-        gores[s.i].style.opacity = op;
         pos = (ambil > 0 && ambil < s.L) ? gores[s.i].getPointAtLength(ambil) : (ambil > 0 ? null : pos);
       } else if (ambil > 0) pos = null;
       sisa -= ambil;
     });
-    if (pos && t < 6000) { titik.setAttribute('x', pos.x - 2.5); titik.setAttribute('y', pos.y - 2.5); titik.style.opacity = 1; }
+    if (pos && t < UKIR) { titik.setAttribute('x', pos.x - 2.5); titik.setAttribute('y', pos.y - 2.5); titik.style.opacity = 1; }
     else titik.style.opacity = 0;
-    setTimeout(langkah, 30);
+    if (t >= UKIR) { muat.classList.add('selesai'); return; }
+    berikut(langkah);
   })();
 })();
 </script>
