@@ -1,8 +1,8 @@
 /* Service worker pembungkus Padma Group. Hanya berkas pembungkus (situs ini
    sendiri) yang di-cache; dashboard di script.google.com TIDAK pernah disentuh.
-   Jaringan dulu supaya pembaruan langsung terpakai; cache kalau offline.
+   Cache dulu, disegarkan di latar (v5, 2026-09-25); lihat penangan fetch.
    Naikkan VERSI tiap berkas di BERKAS berubah nama. */
-const VERSI = 'padma-pembungkus-v4';
+const VERSI = 'padma-pembungkus-v5';
 const BERKAS = ['./', './index.html', './manifest.json', './favicon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -20,16 +20,22 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== self.location.origin) return;
+  /* CACHE DULU, SEGARKAN DI LATAR (2026-09-25, "booting pembungkus bisa
+     dipercepat?"). Dulu jaringan dulu: tiap buka menunggu satu perjalanan
+     ke GitHub/Cloudflare SEBELUM iframe dashboard boleh mulai dimuat. Sekarang
+     cangkang langsung dari cache; versi baru dari jaringan disimpan untuk
+     pembukaan BERIKUTNYA (harga: pembaruan pembungkus terpakai satu buka kemudian). */
+  const segar = fetch(e.request).then((r) => {
+    if (r && r.ok) {
+      const salin = r.clone();
+      caches.open(VERSI).then((c) => c.put(e.request, salin));
+    }
+    return r;
+  });
   e.respondWith(
-    fetch(e.request)
-      .then((r) => {
-        if (r && r.ok) {
-          const salin = r.clone();
-          caches.open(VERSI).then((c) => c.put(e.request, salin));
-        }
-        return r;
-      })
-      .catch(() => caches.match(e.request, { ignoreSearch: true })
-        .then((r) => r || caches.match('./')))
+    caches.match(e.request, { ignoreSearch: true }).then((lama) => {
+      if (lama) { e.waitUntil(segar.catch(() => {})); return lama; }
+      return segar.catch(() => caches.match('./'));
+    })
   );
 });

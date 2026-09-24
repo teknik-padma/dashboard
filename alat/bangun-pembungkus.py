@@ -133,6 +133,10 @@ html = '''<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#000000" id="warnaBilah">
+<!-- BOOT LEBIH CEPAT (2026-09-25): sambungan TLS ke Apps Script dibuka SEBELUM
+     iframe-nya diurai, bukan sesudahnya. -->
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com">
 <title>Padma Group</title>
 <meta name="description" content="Dashboard karyawan PT Padmacahaya Mitra Teknologi dan PT Padmacahaya Mitra Pratama.">
 <!-- PWA: bisa diinstal di Chrome HP (manifest + service worker), dan di iPhone
@@ -158,7 +162,10 @@ html = '''<!DOCTYPE html>
 })();
 </script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap">
+<!-- media="print" lalu "all": stylesheet font TIDAK menahan cat pertama. Inter
+     cuma dipakai teks "tidak ada koneksi" dan kamera; dulu layar muat hitam
+     baru tergambar sesudah CSS font dari Google tiba. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" media="print" onload="this.media='all'">
 <style>
   :root { --bawah: ''' + TERANG_BILAH + '''; }
   html[data-tema="dark"] { --bawah: ''' + GELAP_BILAH + '''; }
@@ -250,6 +257,12 @@ html = '''<!DOCTYPE html>
 </style>
 </head>
 <body>
+<!-- IFRAME PALING DULU (2026-09-25): permintaan ke Apps Script berangkat begitu
+     tag ini diurai. Dulu ia di bawah SVG layar muat (~42 KB) -- dashboard baru
+     diminta sesudah seluruh pola logo diurai. #muat (z-index 2) tetap di atasnya. -->
+<div id="bingkai"><iframe id="dasbor"''' + (' credentialless' if TANPA_COOKIE else '') + ''' src="''' + EXEC + '''"
+        title="Padma Group"
+        allow="camera; clipboard-read; clipboard-write; fullscreen; geolocation"></iframe></div>
 <div id="muat" role="status" aria-label="Memuat Padma Group">
 <div class="pola" aria-hidden="true"><div class="pola-putar">''' + POLA_SVG + '''<div class="kilau-pita"><div class="kilau-isi"><svg class="pola-isi"><rect width="100%" height="100%" fill="url(#ubin)"/></svg></div></div></div></div>
 ''' + svg + '''
@@ -262,9 +275,6 @@ html = '''<!DOCTYPE html>
 <button type="button" class="tutup" id="kameraTutup" aria-label="Tutup kamera">&times;</button>
 </div>
 <div id="ukurAman" aria-hidden="true"></div>
-<div id="bingkai"><iframe id="dasbor"''' + (' credentialless' if TANPA_COOKIE else '') + ''' src="''' + EXEC + '''"
-        title="Padma Group"
-        allow="camera; clipboard-read; clipboard-write; fullscreen; geolocation"></iframe></div>
 <script>
 /* Pembungkus Padma Group (2026-09-24). Layar muat hitam = laser mengukir logo
    Padma dan FirstJet bersamaan, SEKALI (~14,4 dtk), dilepas waktu
@@ -278,7 +288,7 @@ html = '''<!DOCTYPE html>
   var jalan = true, siap = false, animSelesai = false, mulai = Date.now();
   /* Jam laser: normal = ms sejak dibuka; sesudah "siap" dipercepat supaya sisa
      ukiran selesai dalam SUSUL_MS (tidak dipotong, tidak ditunggu). */
-  var SUSUL_MS = 600, susul = null;
+  var SUSUL_MS = 300, susul = null;  // 600 -> 300 (2026-09-25, boot lebih cepat)
   function waktu() {
     var kini = Date.now();
     return susul ? susul.dt0 + (kini - susul.t0) * susul.laju : kini - mulai;
@@ -658,9 +668,9 @@ manifest = {
 
 sw = '''/* Service worker pembungkus Padma Group. Hanya berkas pembungkus (situs ini
    sendiri) yang di-cache; dashboard di script.google.com TIDAK pernah disentuh.
-   Jaringan dulu supaya pembaruan langsung terpakai; cache kalau offline.
+   Cache dulu, disegarkan di latar (v5, 2026-09-25); lihat penangan fetch.
    Naikkan VERSI tiap berkas di BERKAS berubah nama. */
-const VERSI = 'padma-pembungkus-v4';
+const VERSI = 'padma-pembungkus-v5';
 const BERKAS = ['./', './index.html', './manifest.json', './favicon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -678,17 +688,23 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== self.location.origin) return;
+  /* CACHE DULU, SEGARKAN DI LATAR (2026-09-25, "booting pembungkus bisa
+     dipercepat?"). Dulu jaringan dulu: tiap buka menunggu satu perjalanan
+     ke GitHub/Cloudflare SEBELUM iframe dashboard boleh mulai dimuat. Sekarang
+     cangkang langsung dari cache; versi baru dari jaringan disimpan untuk
+     pembukaan BERIKUTNYA (harga: pembaruan pembungkus terpakai satu buka kemudian). */
+  const segar = fetch(e.request).then((r) => {
+    if (r && r.ok) {
+      const salin = r.clone();
+      caches.open(VERSI).then((c) => c.put(e.request, salin));
+    }
+    return r;
+  });
   e.respondWith(
-    fetch(e.request)
-      .then((r) => {
-        if (r && r.ok) {
-          const salin = r.clone();
-          caches.open(VERSI).then((c) => c.put(e.request, salin));
-        }
-        return r;
-      })
-      .catch(() => caches.match(e.request, { ignoreSearch: true })
-        .then((r) => r || caches.match('./')))
+    caches.match(e.request, { ignoreSearch: true }).then((lama) => {
+      if (lama) { e.waitUntil(segar.catch(() => {})); return lama; }
+      return segar.catch(() => caches.match('./'));
+    })
   );
 });
 '''
