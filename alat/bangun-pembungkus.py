@@ -183,7 +183,7 @@ html = '''<!DOCTYPE html>
   #muat {
     position: fixed; inset: 0; z-index: 2; background: #000; color: #fff;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    transition: opacity .55s ease;
+    transition: opacity .25s ease;
   }
   #muat.lepas { opacity: 0; pointer-events: none; }
   #laser { width: min(''' + str(LEBAR_PX) + '''px, ''' + str(LEBAR_VW) + '''vw); height: auto; aspect-ratio: ''' + '%d / %d' % (VB[2], VB[3]) + '''; overflow: visible; }
@@ -297,7 +297,7 @@ html = '''<!DOCTYPE html>
     jalan = false;
     muat.classList.add('lepas');
     warnaBilah();
-    setTimeout(function () { muat.style.display = 'none'; }, 600);
+    setTimeout(function () { muat.style.display = 'none'; }, 300);
   }
   function warnaBilah() {
     if (jalan) return;  // layar muat masih tampil: bilah tetap hitam
@@ -484,6 +484,14 @@ html = '''<!DOCTYPE html>
     susul = { t0: Date.now(), dt0: dt, laju: Math.max(1, (AKHIR - dt) / SUSUL_MS) };
   }
   setTimeout(lepas, 25000);
+  /* INSTAN SEPERTI BUKA /exec LANGSUNG (2026-09-25, "kalo dari script google
+     instan ... bisa ga sih yg instan aja"). Dulu layar laser menunggu dashboard
+     SELESAI boot (sesi + data) lalu menyusul ukirannya ~1,1 dtk + pudar .55 --
+     loading bertahap yang terasa cepat di /exec tertutup layar hitam. Sekarang
+     dilepas begitu iframe `load`: halaman dashboard sudah tergambar (kartu
+     "Mengecek sesi..."), datanya menyusul di sana. Laser tinggal menutupi waktu
+     Google menyajikan halaman. Berhenti di tempat, tanpa menyusul ukiran. */
+  dasbor.addEventListener('load', function () { lepas(); });
 
   /* Tanpa internet: layar muat berkata begitu; tersambung lagi sebelum dashboard
      sempat siap -> iframe dimuat ulang (yang sudah siap tidak disentuh). */
