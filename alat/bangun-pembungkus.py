@@ -57,31 +57,38 @@ svg = ('<svg id="laser" viewBox="%d %d %d %d" aria-hidden="true">' % VB
        + '</svg>')
 LEBAR_PX = 320
 
-# Pola latar selang-seling (2026-09-25): ubin 2 langkah x 2 baris. Baris 0:
-# Padma, FirstJet; baris 1 bergeser setengah langkah: FirstJet, Padma (Padma di
-# tepi ubin digambar dua kali, kiri dan kanan, supaya tidak terpotong). Logo
-# digambar sekali di <defs>, sisanya <use> -> diukir serentak.
-LANGKAH, BARIS, TINGGI_LOGO = 124, 104, 46
-SK = TINGGI_LOGO / 100.0
+# POLA LOGO CUSTOMER (2026-09-25, diminta "diganti logo2 customer saja yang
+# dibackground ... idle aja cuma ada cahaya jalan2"; menggantikan pola
+# Padma-FirstJet yang ikut diukir). Siluet putih dari alat/bangun-pola-customer.py
+# (alat/pola-customer/*.png), disajikan sebagai berkas pola/<id>.png -- 160 KB
+# ditanam di index.html akan menahan layar muat itu sendiri. Diam; yang
+# bergerak hanya kilau. Ubin 5 kolom x 14 baris (sempit-tinggi: layar HP ~3
+# kolom x 10 baris tanpa pengulangan; 11x6 dulu berulang di tengah layar), baris
+# ganjil bergeser setengah sel. Logo di tepi kanan ubin digambar lagi di kiri.
+POLA_DIR = os.path.join(ALAT, 'pola-customer')
+CUST = json.load(open(os.path.join(POLA_DIR, 'daftar.json'), encoding='utf-8'))
+assert len(CUST) >= 12, len(CUST)
+SEL_W, SEL_H, KOLOM, BARIS_POLA = 132, 76, 5, 14
+W, H = SEL_W * KOLOM, SEL_H * BARIS_POLA
 
 
-def ubin_logo(k, L, pusat_x):
-    # tirai klip di koordinat ASLI logo (path-nya tidak ikut digeser translate)
-    return ('<g id="ubin-%s" transform="scale(%.3f) translate(%.1f 0)">'
-            '<clipPath id="ubinKlip-%s"><rect id="ubinTirai-%s" x="%.1f" y="-52" width="120" height="0"/></clipPath>'
-            '<path fill="#fff" fill-rule="evenodd" clip-path="url(#ubinKlip-%s)" d="%s"/>'
-            '<path id="ubinTepi-%s" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" pathLength="1"'
-            ' style="stroke-dasharray:1 2;stroke-dashoffset:1;opacity:0" d="%s"/>'
-            '</g>') % (k, SK, -pusat_x, k, k, pusat_x - 60, k, L['isi'], k, L['isi'])
+def gambar_pola():
+    isi = []
+    for r in range(BARIS_POLA):
+        for c in range(KOLOM):
+            i = (r * KOLOM + c) % len(CUST)
+            L = CUST[i]
+            cx = c * SEL_W + SEL_W / 2 + (SEL_W / 2 if r % 2 else 0)
+            cy = r * SEL_H + SEL_H / 2
+            for geser in ((0, -W) if cx + L['w'] / 2 > W else (0,)):
+                isi.append('<image href="pola/%s.png" x="%.1f" y="%.1f" width="%d" height="%d"/>'
+                           % (L['id'], cx + geser - L['w'] / 2, cy - L['h'] / 2, L['w'], L['h']))
+    return ''.join(isi)
 
 
-W, H = 2 * LANGKAH, 2 * BARIS
-TEMPAT = (('p', LANGKAH * .5, BARIS * .5), ('f', LANGKAH * 1.5, BARIS * .5),
-          ('f', LANGKAH * 1.0, BARIS * 1.5), ('p', 0, BARIS * 1.5), ('p', W, BARIS * 1.5))
 POLA_SVG = ('<svg class="pola-isi pola-dasar"><defs>'
-            + ubin_logo('p', PADMA, 0) + ubin_logo('f', FJ, 65)
-            + '<pattern id="ubin" patternUnits="userSpaceOnUse" width="%d" height="%d" x="-8" y="-20">' % (W, H)
-            + ''.join('<use href="#ubin-%s" transform="translate(%.1f %.1f)"/>' % (k, x, y) for k, x, y in TEMPAT)
+            '<pattern id="ubin" patternUnits="userSpaceOnUse" width="%d" height="%d" x="-40" y="-10">' % (W, H)
+            + gambar_pola()
             + '</pattern></defs><rect width="100%" height="100%" fill="url(#ubin)"/></svg>')
 DATA_LASER = json.dumps({
                          'baris': [PADMA['baris'], FJ['baris']]}, separators=(',', ':'))
@@ -164,10 +171,8 @@ html = '''<!DOCTYPE html>
   /* "Tap to continue" DIBUANG (2026-09-25, "gasuka ada tulisan tap to
      continue ... kalo udah selesai login aja tp yg smooth"): dashboard siap
      sebelum laser selesai -> sisa ukiran disusul dalam SUSUL_MS, lalu pudar. */
-  /* POLA SELANG-SELING (2026-09-25, contoh gambar permen dari pemilik): Padma
-     dan FirstJet bergantian, baris berselang setengah langkah, tidak miring;
-     semuanya DIUKIR SERENTAK dengan logo tengah (satu <pattern>, jadi satu
-     tulisan atribut per frame untuk semua salinan). Kilau menyapu tetap. */
+  /* POLA LOGO CUSTOMER (2026-09-25): siluet putih samar, diam; kilau menyapu
+     = salinan pola yang sama, lebih terang, di dalam pita yang lewat. */
   #laser, .putus { position: relative; z-index: 1; }
   .pola { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: .5;
     -webkit-mask-image: radial-gradient(ellipse 62% 40% at 50% 47%, transparent 30%, #000 78%);
@@ -517,25 +522,6 @@ html = '''<!DOCTYPE html>
     J.atas = J.baris[0][0] - 3;
     J.tirai.setAttribute('y', J.atas);
   });
-  /* Pola latar: satu garis tepi per jenis logo (pathLength=1, dash menyapu
-     seluruh sub-path) + tirai arsir, jadwal sama dengan logo tengah. Ditulis
-     hanya kalau berubah. */
-  var POLA = ['p', 'f'].map(function (k) {
-    return { tepi: document.getElementById('ubinTepi-' + k), tirai: document.getElementById('ubinTirai-' + k), lama: '' };
-  });
-  function polaLangkah(dt) {
-    var pt = jalur(dt, JADWAL[0].tepi), pa = jalur(dt, JADWAL[0].arsir);
-    var op = pt > 0 ? 1 - jalur(dt, [JADWAL[0].arsir[1], JADWAL[0].arsir[1] + PUDAR_MS]) : 0;
-    var off = 1 - mulus(pt), tinggi = pa <= 0 ? 0 : pa >= 1 ? 120 : 104 * pa;
-    var kunci = off.toFixed(4) + '|' + op.toFixed(3) + '|' + tinggi.toFixed(2);
-    POLA.forEach(function (U) {
-      if (!U.tepi || U.lama === kunci) return;
-      U.lama = kunci;
-      U.tepi.style.strokeDashoffset = off;
-      U.tepi.style.opacity = op;
-      U.tirai.setAttribute('height', tinggi);
-    });
-  }
   function mulus(x) { return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
   function jalur(dt, r) { return Math.max(0, Math.min(1, (dt - r[0]) / (r[1] - r[0]))); }
 
@@ -588,7 +574,6 @@ html = '''<!DOCTYPE html>
   (function langkah() {
     if (!jalan) return;
     var dt = waktu();
-    polaLangkah(dt);
     JADWAL.forEach(function (J) {
       var pt = jalur(dt, J.tepi);
       var pt2 = tepi(J, pt), pos = arsir(J, jalur(dt, J.arsir)) || pt2;  // dua-duanya selalu dijalankan (tirai)
@@ -670,6 +655,12 @@ self.addEventListener('fetch', (e) => {
 '''
 
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8', newline='\n').write(html)
+import shutil
+os.makedirs(os.path.join(OUT, 'pola'), exist_ok=True)
+for f in os.listdir(os.path.join(OUT, 'pola')):
+    os.remove(os.path.join(OUT, 'pola', f))
+for L in CUST:
+    shutil.copyfile(os.path.join(POLA_DIR, L['id'] + '.png'), os.path.join(OUT, 'pola', L['id'] + '.png'))
 open(os.path.join(OUT, 'manifest.json'), 'w', encoding='utf-8', newline='\n').write(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
 open(os.path.join(OUT, 'sw.js'), 'w', encoding='utf-8', newline='\n').write(sw)
 open(os.path.join(OUT, 'favicon.svg'), 'w', encoding='utf-8', newline='\n').write(ikon_tab)
