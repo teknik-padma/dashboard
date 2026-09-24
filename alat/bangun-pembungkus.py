@@ -118,7 +118,7 @@ html = '''<!DOCTYPE html>
         allow="camera; clipboard-read; clipboard-write; fullscreen; geolocation"></iframe>
 <script>
 /* Pembungkus Padma Group (2026-09-24). Layar muat hitam = laser mengukir logo
-   Padma dan FirstJet bersamaan, SEKALI (~8,4 dtk), dilepas waktu
+   Padma dan FirstJet bersamaan, SEKALI (~14,4 dtk), dilepas waktu
    dashboard mengirim "siap" (postMessage). Pesan hanya diterima dari domain
    Google. Jaring pengaman 25 dtk; ?tahan=1 menahan layar ini (uji). */
 (function () {
@@ -181,16 +181,17 @@ html = '''<!DOCTYPE html>
   }
 
   /* Laser, SEKALI (2026-09-24): Padma dan FirstJet diukir bersamaan, satu
-     titik laser per logo (garis tepi 5 dtk, lalu isi diarsir 3 dtk -- dulu 2,6 +
-     1,3 dtk, pemilik: "ngebut sekali"); sesudah itu diam sampai "siap". Luncur antar-goresan 0,35 x
+     titik laser per logo (garis tepi 9 dtk, lalu isi diarsir 5 dtk -- dulu 2,6 +
+     1,3 lalu 5 + 3 dtk, pemilik dua kali: "kecepetan"); sesudah itu diam sampai
+     "siap". Luncur antar-goresan 0,35 x
      jarak dengan titik mati, seperti agLaserMulai_ di Index.html. */
   var D = ''' + DATA_LASER + ''';
   var svg = document.getElementById('laser');
   var JADWAL = [  // ms sejak halaman dibuka
-    { tepi: [0, 5000], arsir: [5000, 8000], logo: svg.querySelector('.padma') },
-    { tepi: [0, 5000], arsir: [5000, 8000], logo: svg.querySelector('.firstjet') }
+    { tepi: [0, 9000], arsir: [9000, 14000], logo: svg.querySelector('.padma') },
+    { tepi: [0, 9000], arsir: [9000, 14000], logo: svg.querySelector('.firstjet') }
   ];
-  var PUDAR_MS = 400, AKHIR = 8000 + PUDAR_MS;
+  var PUDAR_MS = 400, AKHIR = 14000 + PUDAR_MS;
   JADWAL.forEach(function (J, n) {
     J.gores = Array.prototype.slice.call(J.logo.querySelectorAll('.gores'));
     J.tirai = J.logo.querySelector('.tirai');
