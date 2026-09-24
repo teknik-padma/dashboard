@@ -178,6 +178,13 @@
       try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: true }, asal); } catch (err) {}
     }
     if (d.jenis === 'pindaiQr' && typeof d.id === 'string' && e.source) kameraBuka(e.source, asal, d.id);
+    /* Tautan tiket Scan QR dibuka langsung (diminta "gausah diklik dulu"):
+       halaman puncak boleh pindah tanpa ketukan, iframe tidak. Hanya
+       script.google.com -- pesan dari Google pun tidak boleh membawa ke
+       situs lain. Tombol Kembali pulang ke dashboard. */
+    if (d.jenis === 'buka' && typeof d.url === 'string' && d.url.indexOf('https://script.google.com/') === 0) {
+      location.href = d.url;
+    }
   });
 
   /* KAMERA SCAN QR (2026-09-24). Dashboard meminta lewat postMessage, halaman
