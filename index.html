@@ -37,12 +37,17 @@
   /* Ruang atas/bawah seperti aplikasi: area poni/status dan garis navigasi HP
      (safe-area) TIDAK ditimpa iframe -- iframe tidak mengenal inset itu -- tapi
      diisi warna bilah dashboard. Di peramban biasa inset atas = 0. */
+  /* Sampai DASAR layar (2026-09-24): dulu tingginya 100% - inset bawah, dan di
+     iPhone terpasang "100%" tidak sama dengan tinggi layar -- dilaporkan XR
+     "dagunya kok panjang" (~67pt kosong, inset-nya 34pt). Sekarang jarak garis
+     home diukur di sini (#ukurAman) dan dikirim ke dashboard (pesan "inset"),
+     yang menjadikannya ruang DI DALAM bilah bawahnya. */
   iframe {
     position: fixed; left: 0; width: 100%;
-    top: env(safe-area-inset-top, 0px);
-    height: calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    top: env(safe-area-inset-top, 0px); bottom: 0;
     border: 0; display: block;
   }
+  #ukurAman { position: fixed; left: 0; bottom: 0; width: 0; height: env(safe-area-inset-bottom, 0px); visibility: hidden; pointer-events: none; }
   #muat {
     position: fixed; inset: 0; z-index: 2; background: #000; color: #fff;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -126,6 +131,7 @@
 <div class="petunjuk" id="kameraPetunjuk">Arahkan kamera ke QR di stiker mesin.</div>
 <button type="button" class="tutup" id="kameraTutup" aria-label="Tutup kamera">&times;</button>
 </div>
+<div id="ukurAman" aria-hidden="true"></div>
 <iframe id="dasbor" src="https://script.google.com/macros/s/AKfycbzBRPeuPWoL3UdErFpn9WngpqQNiqvf9zH0dOhAsNEGlI1s9Uhm0XIGkWwalLctpwwR/exec"
         title="Padma Group"
         allow="camera; clipboard-read; clipboard-write; fullscreen; geolocation"></iframe>
@@ -177,6 +183,7 @@
     if (d.jenis === 'tema' && e.source && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: true }, asal); } catch (err) {}
     }
+    if (d.jenis === 'tema' && e.source) { sumberDasbor = { w: e.source, asal: asal }; kirimAman(); }
     if (d.jenis === 'pindaiQr' && typeof d.id === 'string' && e.source) kameraBuka(e.source, asal, d.id);
     /* Tautan tiket Scan QR dibuka langsung (diminta "gausah diklik dulu"):
        halaman puncak boleh pindah tanpa ketukan, iframe tidak. Hanya
@@ -186,6 +193,16 @@
       location.href = d.url;
     }
   });
+
+  /* Jarak aman bawah (garis home iPhone) ke dashboard, tiap dimuat dan tiap
+     layar berputar. iframe tidak bisa membaca env() sendiri. */
+  var sumberDasbor = null;
+  function kirimAman() {
+    if (!sumberDasbor) return;
+    var px = document.getElementById('ukurAman').getBoundingClientRect().height || 0;
+    try { sumberDasbor.w.postMessage({ padma: 1, jenis: 'inset', bawah: px }, sumberDasbor.asal); } catch (err) {}
+  }
+  window.addEventListener('resize', function () { setTimeout(kirimAman, 150); });
 
   /* KAMERA SCAN QR (2026-09-24). Dashboard meminta lewat postMessage, halaman
      ini membuka kamera belakang, membaca QR (BarcodeDetector, kalau tidak ada
