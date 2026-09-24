@@ -61,6 +61,12 @@ DATA_LASER = json.dumps({
 
 EXEC = 'https://script.google.com/macros/s/AKfycbzBRPeuPWoL3UdErFpn9WngpqQNiqvf9zH0dOhAsNEGlI1s9Uhm0XIGkWwalLctpwwR/exec'
 TERANG_BILAH, GELAP_BILAH = '#FFFFFF', '#16181C'
+# Iframe TANPA COOKIE (credentialless, Chrome): obat "Maaf, saat ini tidak dapat
+# membuka file" di HP dengan beberapa akun Google (terbukti di HP pemilik lewat
+# tanpa-cookie.padmagroup.pages.dev, 2026-09-24). Mati dulu di situs utama:
+# token titipan (dashboard v694) harus sempat terkumpul, kalau tidak semua orang
+# login ulang sekali waktu sakelar ini menyala.
+TANPA_COOKIE = False
 
 html = '''<!DOCTYPE html>
 <html lang="id">
@@ -199,7 +205,7 @@ html = '''<!DOCTYPE html>
 <button type="button" class="tutup" id="kameraTutup" aria-label="Tutup kamera">&times;</button>
 </div>
 <div id="ukurAman" aria-hidden="true"></div>
-<div id="bingkai"><iframe id="dasbor" src="''' + EXEC + '''"
+<div id="bingkai"><iframe id="dasbor"''' + (' credentialless' if TANPA_COOKIE else '') + ''' src="''' + EXEC + '''"
         title="Padma Group"
         allow="camera; clipboard-read; clipboard-write; fullscreen; geolocation"></iframe></div>
 <script>
@@ -247,8 +253,18 @@ html = '''<!DOCTYPE html>
     if (d.jenis === 'siap') { siap = true; siapLanjut(); }
     /* Dijawab tiap pesan tema (tiap dashboard dimuat): "ada kamera di sini".
        Dashboard yang mendengarnya memakai kamera halaman ini untuk Scan QR. */
-    if (d.jenis === 'tema' && e.source && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: true }, asal); } catch (err) {}
+    /* Dijawab tiap pesan tema: "ada pembungkus", kamera tersedia atau tidak,
+       dan TOKEN TITIPAN. Iframe tanpa cookie (credentialless) kehilangan
+       localStorage tiap aplikasi ditutup, jadi token login disimpan di sini
+       dan diserahkan balik; hanya ke bingkai Google (asal sudah disaring). */
+    if (d.jenis === 'tema' && e.source) {
+      var kamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+      var tokenTitip = '';
+      try { tokenTitip = localStorage.getItem('padmaToken') || ''; } catch (err) {}
+      try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: kamera, token: tokenTitip }, asal); } catch (err) {}
+    }
+    if (d.jenis === 'simpanToken' && typeof d.token === 'string' && d.token.length < 2000) {
+      try { if (d.token) localStorage.setItem('padmaToken', d.token); else localStorage.removeItem('padmaToken'); } catch (err) {}
     }
     if (d.jenis === 'tema' && e.source) { sumberDasbor = { w: e.source, asal: asal }; kirimAman(); }
     if (d.jenis === 'pindaiQr' && typeof d.id === 'string' && e.source) kameraBuka(e.source, asal, d.id);

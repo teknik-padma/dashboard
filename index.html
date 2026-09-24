@@ -183,8 +183,18 @@
     if (d.jenis === 'siap') { siap = true; siapLanjut(); }
     /* Dijawab tiap pesan tema (tiap dashboard dimuat): "ada kamera di sini".
        Dashboard yang mendengarnya memakai kamera halaman ini untuk Scan QR. */
-    if (d.jenis === 'tema' && e.source && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: true }, asal); } catch (err) {}
+    /* Dijawab tiap pesan tema: "ada pembungkus", kamera tersedia atau tidak,
+       dan TOKEN TITIPAN. Iframe tanpa cookie (credentialless) kehilangan
+       localStorage tiap aplikasi ditutup, jadi token login disimpan di sini
+       dan diserahkan balik; hanya ke bingkai Google (asal sudah disaring). */
+    if (d.jenis === 'tema' && e.source) {
+      var kamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+      var tokenTitip = '';
+      try { tokenTitip = localStorage.getItem('padmaToken') || ''; } catch (err) {}
+      try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: kamera, token: tokenTitip }, asal); } catch (err) {}
+    }
+    if (d.jenis === 'simpanToken' && typeof d.token === 'string' && d.token.length < 2000) {
+      try { if (d.token) localStorage.setItem('padmaToken', d.token); else localStorage.removeItem('padmaToken'); } catch (err) {}
     }
     if (d.jenis === 'tema' && e.source) { sumberDasbor = { w: e.source, asal: asal }; kirimAman(); }
     if (d.jenis === 'pindaiQr' && typeof d.id === 'string' && e.source) kameraBuka(e.source, asal, d.id);
