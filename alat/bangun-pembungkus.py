@@ -248,6 +248,12 @@ html = '''<!DOCTYPE html>
   var TAHAN = /[?&]tahan=1/.test(location.search);
 
   function simpan(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function titipBaca() {
+    try { var t = JSON.parse(localStorage.getItem('padmaTitip') || '{}'); return (t && typeof t === 'object') ? t : {}; } catch (e) { return {}; }
+  }
+  function titipTulis(t) {
+    try { localStorage.setItem('padmaTitip', JSON.stringify(t)); } catch (e) { console.warn('titipan gagal disimpan', e); }
+  }
   function lepas() {
     if (!jalan || TAHAN) return;
     jalan = false;
@@ -287,7 +293,25 @@ html = '''<!DOCTYPE html>
       var kamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
       var tokenTitip = '';
       try { tokenTitip = localStorage.getItem('padmaToken') || ''; } catch (err) {}
-      try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: kamera, token: tokenTitip, muatUlang: true }, asal); } catch (err) {}
+      try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: kamera, token: tokenTitip, muatUlang: true, titipan: titipBaca() }, asal); } catch (err) {}
+    }
+    /* TITIPAN SIMPANAN (2026-09-25, dashboard v700): antrean simpan, draf dan
+       pengaturan dashboard dicerminkan ke sini, karena localStorage iframe
+       tanpa cookie hilang tiap aplikasi ditutup. Hanya kunci padma_*; satu
+       objek JSON di kunci padmaTitip. titipSemua = salinan utuh (acuan). */
+    if (d.jenis === 'titip' && typeof d.k === 'string' && /^padma_[A-Za-z0-9_:@.+-]{1,200}$/.test(d.k)
+        && (d.v === null || (typeof d.v === 'string' && d.v.length <= 1000000))) {
+      var t = titipBaca();
+      if (d.v === null) delete t[d.k]; else t[d.k] = d.v;
+      titipTulis(t);
+    }
+    if (d.jenis === 'titipSemua' && d.isi && typeof d.isi === 'object') {
+      var baru = {};
+      Object.keys(d.isi).forEach(function (k) {
+        var v = d.isi[k];
+        if (/^padma_[A-Za-z0-9_:@.+-]{1,200}$/.test(k) && typeof v === 'string' && v.length <= 1000000) baru[k] = v;
+      });
+      titipTulis(baru);
     }
     if (d.jenis === 'simpanToken' && typeof d.token === 'string' && d.token.length < 2000) {
       try { if (d.token) localStorage.setItem('padmaToken', d.token); else localStorage.removeItem('padmaToken'); } catch (err) {}
