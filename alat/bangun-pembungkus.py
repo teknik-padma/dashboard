@@ -46,6 +46,17 @@ def logo_svg(kelas, L, isi, bawah='', atas=''):
 PERAK = ('<radialGradient id="perak" gradientUnits="userSpaceOnUse" cx="0" cy="6" r="58">'
          '<stop offset="0" stop-color="#D2D2D2"/><stop offset=".5" stop-color="#B2B2B2"/>'
          '<stop offset="1" stop-color="#8E8E8E"/></radialGradient>')
+# Ikon tab browser (2026-09-24, diminta "logo padma tanpa background"): hanya
+# logo Padma, latar transparan -- icon-192.png berlatar hitam tetap untuk
+# PWA/apple-touch. Perak asli tenggelam di tab terang, jadi tab terang memakai
+# perak gelap; tab gelap perak asli (media query di dalam SVG, didukung Chrome/Firefox).
+K = PADMA['kotak']
+ikon_tab = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="%.1f %.1f %.1f %.1f">' % (K[0] - 1, K[1] - 1, K[2] - K[0] + 2, K[3] - K[1] + 2)
+            + '<style>.t{stop-color:#7A7A7A}.m{stop-color:#5A5A5A}.g{stop-color:#3A3A3A}'
+            '@media (prefers-color-scheme:dark){.t{stop-color:#D2D2D2}.m{stop-color:#B2B2B2}.g{stop-color:#8E8E8E}}</style>'
+            '<defs><radialGradient id="p" gradientUnits="userSpaceOnUse" cx="0" cy="6" r="58">'
+            '<stop offset="0" class="t"/><stop offset=".5" class="m"/><stop offset="1" class="g"/></radialGradient></defs>'
+            '<path fill="url(#p)" fill-rule="evenodd" d="%s"/></svg>\n' % PADMA['isi'])
 lapis_perak = '<path class="warna-lapis" fill="url(#perak)" fill-rule="evenodd" d="%s"/>' % PADMA['isi']
 lapis_biru = '<rect class="warna-lapis" x="%s" y="%s" width="%s" height="%s" rx="16" fill="#094B84"/>' % LENCANA
 assert FJ['kotak'][0] > LENCANA[0] and FJ['kotak'][2] < LENCANA[0] + LENCANA[2]
@@ -73,7 +84,7 @@ html = '''<!DOCTYPE html>
 <!-- PWA: bisa diinstal di Chrome HP (manifest + service worker), dan di iPhone
      lewat Bagikan > Tambah ke Layar Utama (tag apple-*). -->
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -389,8 +400,8 @@ sw = '''/* Service worker pembungkus Padma Group. Hanya berkas pembungkus (situs
    sendiri) yang di-cache; dashboard di script.google.com TIDAK pernah disentuh.
    Jaringan dulu supaya pembaruan langsung terpakai; cache kalau offline.
    Naikkan VERSI tiap berkas di BERKAS berubah nama. */
-const VERSI = 'padma-pembungkus-v2';
-const BERKAS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+const VERSI = 'padma-pembungkus-v3';
+const BERKAS = ['./', './index.html', './manifest.json', './favicon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSI).then((c) => c.addAll(BERKAS)).then(() => self.skipWaiting()));
@@ -425,4 +436,5 @@ self.addEventListener('fetch', (e) => {
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8', newline='\n').write(html)
 open(os.path.join(OUT, 'manifest.json'), 'w', encoding='utf-8', newline='\n').write(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
 open(os.path.join(OUT, 'sw.js'), 'w', encoding='utf-8', newline='\n').write(sw)
+open(os.path.join(OUT, 'favicon.svg'), 'w', encoding='utf-8', newline='\n').write(ikon_tab)
 print('ok', len(html), 'iou padma', PADMA['iou'], 'firstjet', FJ['iou'])
