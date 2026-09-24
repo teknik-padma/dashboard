@@ -6,7 +6,13 @@ ikon launcher APK, cincinnya cuma ~42% lebar ikon. Sekarang:
   icon-*.png           purpose "any"      cincin 90% lebar
   icon-maskable-*.png  purpose "maskable" cincin 80% = pas zona aman masker
                        Android (lingkaran 80%), jadi tidak terpotong launcher.
-Latar #000 (sama dengan layar muat), logo perak radial seperti aslinya."""
+Latar #000 (sama dengan layar muat).
+
+WARNANYA DARI IKON LAMA, TEPINYA DARI VEKTOR (2026-09-24, dilaporkan "shadow2nya
+hilang, malah plain grey" pada versi perak radial rata): alat/ikon-lama-512.png
+(ikon launcher APK, logo 214px) diperbesar Lanczos lalu di-dilate supaya
+kilaunya menjangkau tepi, dan masker vektor yang memotong tepinya -- jadi kilau
+logam aslinya ikut, tepinya tetap tajam walau diperbesar ~1,9x."""
 import os, re, sys
 import numpy as np, cv2
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -16,6 +22,7 @@ OUT = sys.argv[1]
 ALAT = os.path.dirname(os.path.abspath(__file__))
 PADMA = jiplak(os.path.join(ALAT, 'logo-padma.jpg'), 'terang', 100, 0, 'luas')
 SUPER = 4  # sampel lebih lalu dikecilkan = tepi halus
+LAMA = cv2.imread(os.path.join(ALAT, 'ikon-lama-512.png'))[..., :3].astype(np.float32)
 
 
 def subpath(d):
@@ -55,11 +62,14 @@ def ikon(ukuran, porsi):
         pts = np.array([[(x - cx) * skala + n / 2, (y - cy) * skala + n / 2] for x, y in poli])
         cv2.fillPoly(m, [np.round(pts * 16).astype(np.int32)], 255, lineType=cv2.LINE_AA, shift=4)
         masker = cv2.bitwise_xor(masker, (m > 127).astype(np.uint8) * 255)
-    # perak radial: pusat (0, 6) satuan logo, r 58 -- sama dengan favicon/aslinya
-    yy, xx = np.mgrid[0:n, 0:n].astype(np.float32)
-    r = np.hypot((xx - n / 2) / skala + cx - 0, (yy - n / 2) / skala + cy - 6) / 58
-    stop = np.interp(np.clip(r, 0, 1), [0, .5, 1], [0xD2, 0xB2, 0x8E])
-    rgb = np.dstack([stop] * 3) * (masker[..., None] / 255.0)
+    # cat dari ikon lama: kotak logonya (148..362) dipetakan ke kotak logo vektor
+    sisi = int(round(lebar * skala))
+    cat = cv2.resize(LAMA[148:363, 148:363], (sisi, sisi), interpolation=cv2.INTER_LANCZOS4)
+    cat = cv2.dilate(cat, np.ones((5 * SUPER, 5 * SUPER), np.uint8))
+    kanvas = np.zeros((n, n, 3), np.float32)
+    o = (n - sisi) // 2
+    kanvas[o:o + sisi, o:o + sisi] = cat
+    rgb = kanvas * (masker[..., None] / 255.0)
     kecil = cv2.resize(rgb.astype(np.float32), (ukuran, ukuran), interpolation=cv2.INTER_AREA)
     return np.clip(np.round(kecil), 0, 255).astype(np.uint8)
 
