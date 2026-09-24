@@ -90,10 +90,10 @@ EXEC = 'https://script.google.com/macros/s/AKfycbzBRPeuPWoL3UdErFpn9WngpqQNiqvf9
 TERANG_BILAH, GELAP_BILAH = '#FFFFFF', '#16181C'
 # Iframe TANPA COOKIE (credentialless, Chrome): obat "Maaf, saat ini tidak dapat
 # membuka file" di HP dengan beberapa akun Google (terbukti di HP pemilik lewat
-# tanpa-cookie.padmagroup.pages.dev, 2026-09-24). Mati dulu di situs utama:
-# token titipan (dashboard v694) harus sempat terkumpul, kalau tidak semua orang
-# login ulang sekali waktu sakelar ini menyala.
-TANPA_COOKIE = False
+# tanpa-cookie.padmagroup.pages.dev, 2026-09-24). NYALA di situs utama sejak
+# 2026-09-25 (pemilik: "tanpa cookie situs utama gas", masih kena error Google).
+# Token titipan sudah terkumpul sejak v694; antrean/draf menyusul dititipkan.
+TANPA_COOKIE = True
 
 html = '''<!DOCTYPE html>
 <html lang="id">
