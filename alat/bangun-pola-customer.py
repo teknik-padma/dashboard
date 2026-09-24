@@ -6,7 +6,7 @@ di Index.html dashboard), mengunduh tiap logo dari lh3.googleusercontent.com
 putih polos, transparansi = seberapa jauh piksel dari warna latar logonya.
 Diminta pemilik: "diganti logo2 customer saja yang dibackground ... idle aja
 cuma ada cahaya jalan2", "logonya ambil dari customer ya" -- izin unduh: "boleh"."""
-import io, json, os, urllib.request
+import hashlib, io, json, os, urllib.request
 import numpy as np
 from PIL import Image
 
@@ -61,14 +61,18 @@ def siluet(gambar):
 daftar = json.load(open(os.path.join(ALAT, 'logo-customer.json'), encoding='utf-8'))
 # Cap Lang (Eagle Indo Pharma): kotak merah polos tanpa isi terang -> siluetnya
 # persegi putih; di Index.html pun masih "asumsi, TOLONG DIKONFIRMASI".
-LEWATI = {'eagle indo pharma'}
+# wings surya / ciba: favicon tebakan domain yang SALAH (logo WordPress dan
+# huruf "A" polos) -- di dashboard pun begitu; perbaiki di BRAND_DOMAINS.
+LEWATI = {'eagle indo pharma', 'wings surya', 'ciba'}
 daftar = [d for d in daftar if d['nama'] not in LEWATI]
 for f in os.listdir(KELUAR):
     if f.endswith('.png'):
         os.remove(os.path.join(KELUAR, f))
 hasil = []
 for d in daftar:
-    url = 'https://lh3.googleusercontent.com/d/%s=w400' % d['id']
+    # URL dari susun-logo-customer.py (urutan = SPK terbanyak). lh3 diminta 400 px.
+    url = d['url'] + ('=w400' if 'lh3.googleusercontent.com/d/' in d['url'] else '')
+    d['id'] = hashlib.sha1(d['url'].encode()).hexdigest()[:12]
     try:
         data = urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'}), timeout=30).read()
         s = siluet(Image.open(io.BytesIO(data)))
@@ -79,7 +83,8 @@ for d in daftar:
         print('KOSONG', d['nama'])
         continue
     s.save(os.path.join(KELUAR, d['id'] + '.png'), optimize=True)
-    hasil.append({'nama': d['nama'], 'id': d['id'], 'w': s.size[0] // SKALA, 'h': s.size[1] // SKALA})
+    hasil.append({'nama': d['nama'], 'spk': d.get('spk', 0), 'asal': d.get('asal', ''), 'id': d['id'],
+                  'w': s.size[0] // SKALA, 'h': s.size[1] // SKALA})
     print('ok', d['nama'], s.size)
 json.dump(hasil, open(os.path.join(KELUAR, 'daftar.json'), 'w', encoding='utf-8'), indent=1)
 print(len(hasil), 'dari', len(daftar))

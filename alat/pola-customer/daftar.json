@@ -1,200 +1,362 @@
 [
  {
-  "nama": "yili",
-  "id": "1kEhKu_CVjdar3qBX_6KIjoNxBiF2JO6n",
-  "w": 52,
-  "h": 40
- },
- {
-  "nama": "ultrajaya",
-  "id": "1MjWD2N2mMt07v-To5VbDWEIl6mpC5nvr",
-  "w": 31,
-  "h": 40
- },
- {
-  "nama": "savoria",
-  "id": "1rJ8FVMdsbpdoySa6upk1WCK0RkGywBLs",
-  "w": 89,
-  "h": 40
- },
- {
-  "nama": "sasa",
-  "id": "1vzNCNdzDQe57JgeCx0_zt4DroJFLX1mW",
-  "w": 75,
-  "h": 40
- },
- {
-  "nama": "meiji",
-  "id": "1CWiEZUyve9K_uYfP9zQsiPy9sissoYfs",
-  "w": 100,
-  "h": 40
- },
- {
-  "nama": "indolakto",
-  "id": "19hkjaNV0ovLhyZ6_KHzRuRPoYW0Mx2LG",
-  "w": 104,
-  "h": 13
- },
- {
-  "nama": "indofood",
-  "id": "1i4fx2eA9WMaBZI63UOY7C6LXC3cSZxre",
-  "w": 104,
-  "h": 27
- },
- {
-  "nama": "campina",
-  "id": "1gCdlovm9Rpsz52KJ7-j7YybWRpMFCT0g",
-  "w": 60,
-  "h": 40
- },
- {
-  "nama": "chopindo",
-  "id": "1zhEouv0yIckIeg7lGVqebVOWroh4R_QD",
-  "w": 104,
-  "h": 17
- },
- {
-  "nama": "gudang garam",
-  "id": "1AsgiqaVcjYJsOBiRs-ljBrtn93lU31E0",
-  "w": 81,
-  "h": 40
- },
- {
-  "nama": "olam",
-  "id": "1ricxfhE7SgBtdA6J2mINjEvj2Ki2qT8Z",
-  "w": 104,
-  "h": 34
- },
- {
-  "nama": "pura barutama",
-  "id": "1dlAHdUc4PusywjhptF3yTKemRmX2mDUM",
-  "w": 104,
-  "h": 26
- },
- {
-  "nama": "ffi",
-  "id": "1wosrlgszl3TKTD2k_etftV3we348A2vl",
+  "nama": "mayora",
+  "spk": 212,
+  "asal": "favicon",
+  "id": "5712d061af0f",
   "w": 40,
   "h": 40
  },
  {
-  "nama": "daido metal",
-  "id": "1O8ExBlX_nbKy0WA2tqenSRWfTVmQlkMC",
-  "w": 104,
-  "h": 20
+  "nama": "tirta investama",
+  "spk": 122,
+  "asal": "favicon",
+  "id": "9bcd3c4fa218",
+  "w": 41,
+  "h": 40
  },
  {
-  "nama": "so good",
-  "id": "1xXp8ZX0ct6x_VYxmAy4XiKc2nXGwdYyH",
-  "w": 40,
+  "nama": "pmid",
+  "spk": 120,
+  "asal": "favicon",
+  "id": "a73ab921e373",
+  "w": 54,
   "h": 40
  },
  {
   "nama": "torabika",
-  "id": "1AA8LVhpsIn5GVSV8csEzWRk6d_Fzgw8W",
+  "spk": 106,
+  "asal": "override",
+  "id": "002e36cd5b30",
   "w": 47,
   "h": 40
  },
  {
-  "nama": "coca-cola",
-  "id": "1disZIaTxdH9FoQRIQMVvpHeZis3Du3Mp",
-  "w": 104,
-  "h": 34
- },
- {
-  "nama": "tempo natural",
-  "id": "1zygh8Ss2zrFJAC2diuGG2zXqVWWcLmHu",
-  "w": 85,
+  "nama": "unilever skin",
+  "spk": 97,
+  "asal": "favicon",
+  "id": "23dbe241a226",
+  "w": 36,
   "h": 40
  },
  {
-  "nama": "loreal",
-  "id": "18ps_SixzDWftUWahqmglVCMcLAqXXu3Y",
-  "w": 104,
-  "h": 19
+  "nama": "hms",
+  "spk": 88,
+  "asal": "exact",
+  "id": "8589584c297d",
+  "w": 43,
+  "h": 40
  },
  {
-  "nama": "tetra pak",
-  "id": "1L3IfKu6VThqL72lrSAEBComr1eCeLiLJ",
+  "nama": "ffi juno",
+  "spk": 81,
+  "asal": "override",
+  "id": "f1bb0d93e393",
   "w": 40,
   "h": 40
  },
  {
-  "nama": "indokuat",
-  "id": "1md3VpCuM1YFIeiYBaZvYGoFQV3mEFzlo",
-  "w": 104,
-  "h": 26
+  "nama": "ultrajaya",
+  "spk": 76,
+  "asal": "override",
+  "id": "699e76544f5e",
+  "w": 31,
+  "h": 40
  },
  {
-  "nama": "sayap mas",
-  "id": "1lTAWvIjJ5s4VpTG4Nuy3JoQsxmvOVQ_a",
+  "nama": "indolakto purwosari",
+  "spk": 69,
+  "asal": "override",
+  "id": "1ffe65e3ef3e",
+  "w": 104,
+  "h": 13
+ },
+ {
+  "nama": "tas",
+  "spk": 61,
+  "asal": "exact",
+  "id": "c2b40c3d7a0e",
   "w": 65,
   "h": 40
  },
  {
-  "nama": "dankos farma",
-  "id": "1oSwJYNvWhAx1SZq8VXQtphegOUWpIxlO",
-  "w": 75,
-  "h": 40
- },
- {
-  "nama": "sinar alfa omega",
-  "id": "1DvGKS2akh3tSvPOr6L8IeRQSI0pJfH53",
-  "w": 69,
-  "h": 40
- },
- {
-  "nama": "scarlett",
-  "id": "1awEi0kLGCqTXQENVG4BgMloCoUV-G-y8",
-  "w": 39,
-  "h": 40
- },
- {
-  "nama": "interflex",
-  "id": "1wJazOgYCEW9SLubbt6c6u-Dk_ACkA3qt",
-  "w": 26,
-  "h": 40
- },
- {
-  "nama": "mitrapak",
-  "id": "1smIbijXPGHDXTpblGIeLyujXgZbpb-Cg",
-  "w": 104,
-  "h": 36
- },
- {
-  "nama": "mandom",
-  "id": "1reJyYGVvSk-9uyOUfll-rXBaG5g5oN_l",
-  "w": 39,
-  "h": 40
- },
- {
-  "nama": "indomaret",
-  "id": "1AT_h0Y_lPjcrdHgf0WA428jy6D4TpHqk",
-  "w": 104,
-  "h": 34
- },
- {
-  "nama": "mega global",
-  "id": "1_XlJ62yMz4vzeEi6vfCCAZhOPmT4C2Ta",
-  "w": 104,
-  "h": 27
- },
- {
-  "nama": "colgate",
-  "id": "1-rPvyJj8cYBdslarg8wnQVHp_L0BpmH-",
-  "w": 91,
-  "h": 40
- },
- {
-  "nama": "gunung harta",
-  "id": "13YfMtLtsZ8C1lOBuCl1hSsqS4T8vhPsT",
-  "w": 49,
+  "nama": "kian mulia manunggal",
+  "spk": 60,
+  "asal": "override",
+  "id": "339db0f3e0cd",
+  "w": 85,
   "h": 40
  },
  {
   "nama": "sinar jaya",
-  "id": "1GaZcCSuR2YeO-gdEhylviI_LqbpuNT6U",
+  "spk": 56,
+  "asal": "override",
+  "id": "dc9101525d6c",
   "w": 58,
   "h": 40
+ },
+ {
+  "nama": "gunung harta",
+  "spk": 53,
+  "asal": "override",
+  "id": "b202b4706862",
+  "w": 49,
+  "h": 40
+ },
+ {
+  "nama": "campina",
+  "spk": 52,
+  "asal": "override",
+  "id": "12e2bba735c9",
+  "w": 60,
+  "h": 40
+ },
+ {
+  "nama": "loreal",
+  "spk": 37,
+  "asal": "override",
+  "id": "c23af70fb1f3",
+  "w": 104,
+  "h": 19
+ },
+ {
+  "nama": "png",
+  "spk": 25,
+  "asal": "favicon",
+  "id": "b31b46983353",
+  "w": 39,
+  "h": 40
+ },
+ {
+  "nama": "rusli vinilon sakti",
+  "spk": 23,
+  "asal": "favicon",
+  "id": "2415b021a96f",
+  "w": 104,
+  "h": 34
+ },
+ {
+  "nama": "yili",
+  "spk": 14,
+  "asal": "override",
+  "id": "5f2a3b51e18f",
+  "w": 52,
+  "h": 40
+ },
+ {
+  "nama": "indofood fortuna makmur",
+  "spk": 13,
+  "asal": "override",
+  "id": "59f6e1bf36b6",
+  "w": 104,
+  "h": 27
+ },
+ {
+  "nama": "savoria",
+  "spk": 12,
+  "asal": "override",
+  "id": "d871b3fd8fec",
+  "w": 89,
+  "h": 40
+ },
+ {
+  "nama": "mbi",
+  "spk": 12,
+  "asal": "favicon",
+  "id": "6cdd31bddb85",
+  "w": 37,
+  "h": 40
+ },
+ {
+  "nama": "indokuat",
+  "spk": 9,
+  "asal": "override",
+  "id": "7ebd306c5a91",
+  "w": 104,
+  "h": 26
+ },
+ {
+  "nama": "pura barutama",
+  "spk": 7,
+  "asal": "override",
+  "id": "1824be6cc5a2",
+  "w": 104,
+  "h": 26
+ },
+ {
+  "nama": "so good food",
+  "spk": 7,
+  "asal": "override",
+  "id": "909ec8f4379b",
+  "w": 40,
+  "h": 40
+ },
+ {
+  "nama": "dpi",
+  "spk": 7,
+  "asal": "exact",
+  "id": "fc55ae5fabb4",
+  "w": 104,
+  "h": 28
+ },
+ {
+  "nama": "kdm",
+  "spk": 5,
+  "asal": "exact",
+  "id": "2abb5a9fd799",
+  "w": 43,
+  "h": 40
+ },
+ {
+  "nama": "monde",
+  "spk": 4,
+  "asal": "favicon",
+  "id": "9b44150c0f4d",
+  "w": 37,
+  "h": 40
+ },
+ {
+  "nama": "cahaya",
+  "spk": 4,
+  "asal": "exact",
+  "id": "72133eb16e7d",
+  "w": 104,
+  "h": 25
+ },
+ {
+  "nama": "nutrifood",
+  "spk": 3,
+  "asal": "favicon",
+  "id": "cd693d24c499",
+  "w": 61,
+  "h": 40
+ },
+ {
+  "nama": "interflex sejahtera perdana",
+  "spk": 3,
+  "asal": "override",
+  "id": "24cf77f2150c",
+  "w": 26,
+  "h": 40
+ },
+ {
+  "nama": "ofi",
+  "spk": 2,
+  "asal": "exact",
+  "id": "f8a7d60a65eb",
+  "w": 42,
+  "h": 40
+ },
+ {
+  "nama": "coca cola",
+  "spk": 2,
+  "asal": "override",
+  "id": "519bfc020db9",
+  "w": 104,
+  "h": 34
+ },
+ {
+  "nama": "mega surya eratama",
+  "spk": 2,
+  "asal": "unggahan",
+  "id": "80cf0b24e761",
+  "w": 35,
+  "h": 40
+ },
+ {
+  "nama": "olam",
+  "spk": 2,
+  "asal": "override",
+  "id": "4176c214d799",
+  "w": 104,
+  "h": 34
+ },
+ {
+  "nama": "mitrapak",
+  "spk": 2,
+  "asal": "override",
+  "id": "051b743cabf3",
+  "w": 104,
+  "h": 36
+ },
+ {
+  "nama": "sinar alfa omega",
+  "spk": 1,
+  "asal": "override",
+  "id": "d103203c480d",
+  "w": 69,
+  "h": 40
+ },
+ {
+  "nama": "mmi",
+  "spk": 1,
+  "asal": "exact",
+  "id": "00e182f12d4b",
+  "w": 104,
+  "h": 35
+ },
+ {
+  "nama": "mim",
+  "spk": 1,
+  "asal": "exact",
+  "id": "573ac84977c9",
+  "w": 55,
+  "h": 40
+ },
+ {
+  "nama": "scarlett",
+  "spk": 1,
+  "asal": "override",
+  "id": "807f15dd4caf",
+  "w": 39,
+  "h": 40
+ },
+ {
+  "nama": "dankos farma pulo gadung",
+  "spk": 1,
+  "asal": "override",
+  "id": "1d7c26e8aa55",
+  "w": 75,
+  "h": 40
+ },
+ {
+  "nama": "mandom",
+  "spk": 1,
+  "asal": "override",
+  "id": "1d3cb41e06a7",
+  "w": 39,
+  "h": 40
+ },
+ {
+  "nama": "meiji",
+  "spk": 1,
+  "asal": "override",
+  "id": "2ca250907d1a",
+  "w": 100,
+  "h": 40
+ },
+ {
+  "nama": "sasa",
+  "spk": 1,
+  "asal": "override",
+  "id": "e17e16c2439f",
+  "w": 75,
+  "h": 40
+ },
+ {
+  "nama": "dystar colours",
+  "spk": 1,
+  "asal": "unggahan",
+  "id": "586334a7099d",
+  "w": 104,
+  "h": 36
+ },
+ {
+  "nama": "yamaha indonesia motor manufacturing",
+  "spk": 1,
+  "asal": "unggahan",
+  "id": "9ed6e56efc6f",
+  "w": 104,
+  "h": 19
  }
 ]

@@ -87,12 +87,19 @@ GESER_X, GESER_Y = {'barat daya': (-W, H), 'barat laut': (-W, -H), 'barat': (-W,
 JALAN_DTK = round((GESER_X ** 2 + GESER_Y ** 2) ** 0.5 / LAJU_PX_DTK)
 
 
+# PRIORITAS SPK TERBANYAK (2026-09-25, "logonya diprioritasin dari spk
+# terbanyak"): daftar.json sudah urut jumlah SPK (cekLogoPola). Semua logo
+# sekali, lalu yang teratas mengisi sisa slot sekali lagi -- mulai dari baris
+# atas ubin.
+SLOT = KOLOM * BARIS_POLA
+URUTAN = (CUST + CUST[:max(0, SLOT - len(CUST))])[:SLOT] if len(CUST) < SLOT else CUST[:SLOT]
+
+
 def gambar_pola():
     isi = []
     for r in range(BARIS_POLA):
         for c in range(KOLOM):
-            i = (r * KOLOM + c) % len(CUST)
-            L = CUST[i]
+            L = URUTAN[(r * KOLOM + c) % len(URUTAN)]
             cx = c * SEL_W + SEL_W / 2 + (SEL_W / 2 if r % 2 else 0)
             cy = r * SEL_H + SEL_H / 2
             for geser in ((0, -W) if cx + L['w'] / 2 > W else (0,)):

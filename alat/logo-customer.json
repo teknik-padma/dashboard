@@ -1,138 +1,290 @@
 [
  {
-  "nama": "yili",
-  "id": "1kEhKu_CVjdar3qBX_6KIjoNxBiF2JO6n"
+  "nama": "mayora",
+  "spk": 212,
+  "url": "https://www.google.com/s2/favicons?domain=mayora.com&sz=128",
+  "asal": "favicon"
  },
  {
-  "nama": "ultrajaya",
-  "id": "1MjWD2N2mMt07v-To5VbDWEIl6mpC5nvr"
+  "nama": "tirta investama",
+  "spk": 122,
+  "url": "https://www.google.com/s2/favicons?domain=danone.co.id&sz=128",
+  "asal": "favicon"
  },
  {
-  "nama": "savoria",
-  "id": "1rJ8FVMdsbpdoySa6upk1WCK0RkGywBLs"
- },
- {
-  "nama": "sasa",
-  "id": "1vzNCNdzDQe57JgeCx0_zt4DroJFLX1mW"
- },
- {
-  "nama": "meiji",
-  "id": "1CWiEZUyve9K_uYfP9zQsiPy9sissoYfs"
- },
- {
-  "nama": "indolakto",
-  "id": "19hkjaNV0ovLhyZ6_KHzRuRPoYW0Mx2LG"
- },
- {
-  "nama": "indofood",
-  "id": "1i4fx2eA9WMaBZI63UOY7C6LXC3cSZxre"
- },
- {
-  "nama": "eagle indo pharma",
-  "id": "1RLEsolGjFLEQtXfJ-ojLQ3cjhOrvo33j"
- },
- {
-  "nama": "campina",
-  "id": "1gCdlovm9Rpsz52KJ7-j7YybWRpMFCT0g"
- },
- {
-  "nama": "chopindo",
-  "id": "1zhEouv0yIckIeg7lGVqebVOWroh4R_QD"
- },
- {
-  "nama": "gudang garam",
-  "id": "1AsgiqaVcjYJsOBiRs-ljBrtn93lU31E0"
- },
- {
-  "nama": "olam",
-  "id": "1ricxfhE7SgBtdA6J2mINjEvj2Ki2qT8Z"
- },
- {
-  "nama": "pura barutama",
-  "id": "1dlAHdUc4PusywjhptF3yTKemRmX2mDUM"
- },
- {
-  "nama": "ffi",
-  "id": "1wosrlgszl3TKTD2k_etftV3we348A2vl"
- },
- {
-  "nama": "daido metal",
-  "id": "1O8ExBlX_nbKy0WA2tqenSRWfTVmQlkMC"
- },
- {
-  "nama": "so good",
-  "id": "1xXp8ZX0ct6x_VYxmAy4XiKc2nXGwdYyH"
+  "nama": "pmid",
+  "spk": 120,
+  "url": "https://www.google.com/s2/favicons?domain=pmi.com&sz=128",
+  "asal": "favicon"
  },
  {
   "nama": "torabika",
-  "id": "1AA8LVhpsIn5GVSV8csEzWRk6d_Fzgw8W"
+  "spk": 106,
+  "url": "https://lh3.googleusercontent.com/d/1AA8LVhpsIn5GVSV8csEzWRk6d_Fzgw8W",
+  "asal": "override"
  },
  {
-  "nama": "coca-cola",
-  "id": "1disZIaTxdH9FoQRIQMVvpHeZis3Du3Mp"
+  "nama": "unilever skin",
+  "spk": 97,
+  "url": "https://www.google.com/s2/favicons?domain=unilever.co.id&sz=128",
+  "asal": "favicon"
  },
  {
-  "nama": "tempo natural",
-  "id": "1zygh8Ss2zrFJAC2diuGG2zXqVWWcLmHu"
+  "nama": "hms",
+  "spk": 88,
+  "url": "https://lh3.googleusercontent.com/d/1EWxAsv1pJfo0ykeCu32ZURdonlFYVuw-",
+  "asal": "exact"
  },
  {
-  "nama": "loreal",
-  "id": "18ps_SixzDWftUWahqmglVCMcLAqXXu3Y"
+  "nama": "ffi juno",
+  "spk": 81,
+  "url": "https://lh3.googleusercontent.com/d/1wosrlgszl3TKTD2k_etftV3we348A2vl",
+  "asal": "override"
  },
  {
-  "nama": "tetra pak",
-  "id": "1L3IfKu6VThqL72lrSAEBComr1eCeLiLJ"
+  "nama": "ultrajaya",
+  "spk": 76,
+  "url": "https://lh3.googleusercontent.com/d/1MjWD2N2mMt07v-To5VbDWEIl6mpC5nvr",
+  "asal": "override"
  },
  {
-  "nama": "indokuat",
-  "id": "1md3VpCuM1YFIeiYBaZvYGoFQV3mEFzlo"
+  "nama": "indolakto purwosari",
+  "spk": 69,
+  "url": "https://lh3.googleusercontent.com/d/19hkjaNV0ovLhyZ6_KHzRuRPoYW0Mx2LG",
+  "asal": "override"
  },
  {
-  "nama": "sayap mas",
-  "id": "1lTAWvIjJ5s4VpTG4Nuy3JoQsxmvOVQ_a"
+  "nama": "tas",
+  "spk": 61,
+  "url": "https://lh3.googleusercontent.com/d/1lTAWvIjJ5s4VpTG4Nuy3JoQsxmvOVQ_a",
+  "asal": "exact"
  },
  {
-  "nama": "dankos farma",
-  "id": "1oSwJYNvWhAx1SZq8VXQtphegOUWpIxlO"
- },
- {
-  "nama": "sinar alfa omega",
-  "id": "1DvGKS2akh3tSvPOr6L8IeRQSI0pJfH53"
- },
- {
-  "nama": "scarlett",
-  "id": "1awEi0kLGCqTXQENVG4BgMloCoUV-G-y8"
- },
- {
-  "nama": "interflex",
-  "id": "1wJazOgYCEW9SLubbt6c6u-Dk_ACkA3qt"
- },
- {
-  "nama": "mitrapak",
-  "id": "1smIbijXPGHDXTpblGIeLyujXgZbpb-Cg"
- },
- {
-  "nama": "mandom",
-  "id": "1reJyYGVvSk-9uyOUfll-rXBaG5g5oN_l"
- },
- {
-  "nama": "indomaret",
-  "id": "1AT_h0Y_lPjcrdHgf0WA428jy6D4TpHqk"
- },
- {
-  "nama": "mega global",
-  "id": "1_XlJ62yMz4vzeEi6vfCCAZhOPmT4C2Ta"
- },
- {
-  "nama": "colgate",
-  "id": "1-rPvyJj8cYBdslarg8wnQVHp_L0BpmH-"
- },
- {
-  "nama": "gunung harta",
-  "id": "13YfMtLtsZ8C1lOBuCl1hSsqS4T8vhPsT"
+  "nama": "kian mulia manunggal",
+  "spk": 60,
+  "url": "https://lh3.googleusercontent.com/d/1zygh8Ss2zrFJAC2diuGG2zXqVWWcLmHu",
+  "asal": "override"
  },
  {
   "nama": "sinar jaya",
-  "id": "1GaZcCSuR2YeO-gdEhylviI_LqbpuNT6U"
+  "spk": 56,
+  "url": "https://lh3.googleusercontent.com/d/1GaZcCSuR2YeO-gdEhylviI_LqbpuNT6U",
+  "asal": "override"
+ },
+ {
+  "nama": "gunung harta",
+  "spk": 53,
+  "url": "https://lh3.googleusercontent.com/d/13YfMtLtsZ8C1lOBuCl1hSsqS4T8vhPsT",
+  "asal": "override"
+ },
+ {
+  "nama": "campina",
+  "spk": 52,
+  "url": "https://lh3.googleusercontent.com/d/1gCdlovm9Rpsz52KJ7-j7YybWRpMFCT0g",
+  "asal": "override"
+ },
+ {
+  "nama": "loreal",
+  "spk": 37,
+  "url": "https://lh3.googleusercontent.com/d/18ps_SixzDWftUWahqmglVCMcLAqXXu3Y",
+  "asal": "override"
+ },
+ {
+  "nama": "png",
+  "spk": 25,
+  "url": "https://www.google.com/s2/favicons?domain=pg.com&sz=128",
+  "asal": "favicon"
+ },
+ {
+  "nama": "rusli vinilon sakti",
+  "spk": 23,
+  "url": "https://www.google.com/s2/favicons?domain=vinilon.com&sz=128",
+  "asal": "favicon"
+ },
+ {
+  "nama": "yili",
+  "spk": 14,
+  "url": "https://lh3.googleusercontent.com/d/1kEhKu_CVjdar3qBX_6KIjoNxBiF2JO6n",
+  "asal": "override"
+ },
+ {
+  "nama": "indofood fortuna makmur",
+  "spk": 13,
+  "url": "https://lh3.googleusercontent.com/d/1i4fx2eA9WMaBZI63UOY7C6LXC3cSZxre",
+  "asal": "override"
+ },
+ {
+  "nama": "savoria",
+  "spk": 12,
+  "url": "https://lh3.googleusercontent.com/d/1rJ8FVMdsbpdoySa6upk1WCK0RkGywBLs",
+  "asal": "override"
+ },
+ {
+  "nama": "mbi",
+  "spk": 12,
+  "url": "https://www.google.com/s2/favicons?domain=multibintang.co.id&sz=128",
+  "asal": "favicon"
+ },
+ {
+  "nama": "indokuat",
+  "spk": 9,
+  "url": "https://lh3.googleusercontent.com/d/1md3VpCuM1YFIeiYBaZvYGoFQV3mEFzlo",
+  "asal": "override"
+ },
+ {
+  "nama": "pura barutama",
+  "spk": 7,
+  "url": "https://lh3.googleusercontent.com/d/1dlAHdUc4PusywjhptF3yTKemRmX2mDUM",
+  "asal": "override"
+ },
+ {
+  "nama": "so good food",
+  "spk": 7,
+  "url": "https://lh3.googleusercontent.com/d/1xXp8ZX0ct6x_VYxmAy4XiKc2nXGwdYyH",
+  "asal": "override"
+ },
+ {
+  "nama": "dpi",
+  "spk": 7,
+  "url": "https://lh3.googleusercontent.com/d/1CQ8n-esyYG5mtOTshnbX_c8FTZKdZ7TQ",
+  "asal": "exact"
+ },
+ {
+  "nama": "kdm",
+  "spk": 5,
+  "url": "https://lh3.googleusercontent.com/d/14RBqY2LhAyu2EOhfdBR1uoOTOTRoWIYu",
+  "asal": "exact"
+ },
+ {
+  "nama": "eagle indo pharma",
+  "spk": 5,
+  "url": "https://lh3.googleusercontent.com/d/1RLEsolGjFLEQtXfJ-ojLQ3cjhOrvo33j",
+  "asal": "override"
+ },
+ {
+  "nama": "monde",
+  "spk": 4,
+  "url": "https://www.google.com/s2/favicons?domain=mondenissin.com&sz=128",
+  "asal": "favicon"
+ },
+ {
+  "nama": "cahaya",
+  "spk": 4,
+  "url": "https://lh3.googleusercontent.com/d/16B9H5AZOi_EJnM6pPHZlTpWqgaFJ2C20",
+  "asal": "exact"
+ },
+ {
+  "nama": "nutrifood",
+  "spk": 3,
+  "url": "https://www.google.com/s2/favicons?domain=nutrifood.co.id&sz=128",
+  "asal": "favicon"
+ },
+ {
+  "nama": "interflex sejahtera perdana",
+  "spk": 3,
+  "url": "https://lh3.googleusercontent.com/d/1wJazOgYCEW9SLubbt6c6u-Dk_ACkA3qt",
+  "asal": "override"
+ },
+ {
+  "nama": "ofi",
+  "spk": 2,
+  "url": "https://lh3.googleusercontent.com/d/1A5iMdOwcpORYhKZ6RH-ogpkYjaq9GDWk",
+  "asal": "exact"
+ },
+ {
+  "nama": "wings surya",
+  "spk": 2,
+  "url": "https://www.google.com/s2/favicons?domain=wingscorp.com&sz=128",
+  "asal": "favicon"
+ },
+ {
+  "nama": "coca cola",
+  "spk": 2,
+  "url": "https://lh3.googleusercontent.com/d/1disZIaTxdH9FoQRIQMVvpHeZis3Du3Mp",
+  "asal": "override"
+ },
+ {
+  "nama": "mega surya eratama",
+  "spk": 2,
+  "url": "https://lh3.googleusercontent.com/d/1xWK1SAl-loloAV-pmSkDvJweZB2wYIcK",
+  "asal": "unggahan"
+ },
+ {
+  "nama": "olam",
+  "spk": 2,
+  "url": "https://lh3.googleusercontent.com/d/1ricxfhE7SgBtdA6J2mINjEvj2Ki2qT8Z",
+  "asal": "override"
+ },
+ {
+  "nama": "mitrapak",
+  "spk": 2,
+  "url": "https://lh3.googleusercontent.com/d/1smIbijXPGHDXTpblGIeLyujXgZbpb-Cg",
+  "asal": "override"
+ },
+ {
+  "nama": "sinar alfa omega",
+  "spk": 1,
+  "url": "https://lh3.googleusercontent.com/d/1DvGKS2akh3tSvPOr6L8IeRQSI0pJfH53",
+  "asal": "override"
+ },
+ {
+  "nama": "mmi",
+  "spk": 1,
+  "url": "https://lh3.googleusercontent.com/d/1r8Nu8wfXalVIIt0izCu7Ias18EoObGsK",
+  "asal": "exact"
+ },
+ {
+  "nama": "ciba",
+  "spk": 1,
+  "url": "https://www.google.com/s2/favicons?domain=alcon.com&sz=128",
+  "asal": "favicon"
+ },
+ {
+  "nama": "mim",
+  "spk": 1,
+  "url": "https://lh3.googleusercontent.com/d/1tSox1kgn2AxRCBTHIfRDJe4E0zfahTbF",
+  "asal": "exact"
+ },
+ {
+  "nama": "scarlett",
+  "spk": 1,
+  "url": "https://lh3.googleusercontent.com/d/1awEi0kLGCqTXQENVG4BgMloCoUV-G-y8",
+  "asal": "override"
+ },
+ {
+  "nama": "dankos farma pulo gadung",
+  "spk": 1,
+  "url": "https://lh3.googleusercontent.com/d/1oSwJYNvWhAx1SZq8VXQtphegOUWpIxlO",
+  "asal": "override"
+ },
+ {
+  "nama": "mandom",
+  "spk": 1,
+  "url": "https://lh3.googleusercontent.com/d/1reJyYGVvSk-9uyOUfll-rXBaG5g5oN_l",
+  "asal": "override"
+ },
+ {
+  "nama": "meiji",
+  "spk": 1,
+  "url": "https://lh3.googleusercontent.com/d/1CWiEZUyve9K_uYfP9zQsiPy9sissoYfs",
+  "asal": "override"
+ },
+ {
+  "nama": "sasa",
+  "spk": 1,
+  "url": "https://lh3.googleusercontent.com/d/1vzNCNdzDQe57JgeCx0_zt4DroJFLX1mW",
+  "asal": "override"
+ },
+ {
+  "nama": "dystar colours",
+  "spk": 1,
+  "url": "https://lh3.googleusercontent.com/d/1ftWObmSb7Q-Z_FkQn4U1ecI3YS-ghUzm",
+  "asal": "unggahan"
+ },
+ {
+  "nama": "yamaha indonesia motor manufacturing",
+  "spk": 1,
+  "url": "https://lh3.googleusercontent.com/d/15lUGl1AZ1t0rlgJ1PYkXGTHqk73SLLmr",
+  "asal": "unggahan"
  }
 ]
