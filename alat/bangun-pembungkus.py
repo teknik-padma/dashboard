@@ -70,6 +70,13 @@ CUST = json.load(open(os.path.join(POLA_DIR, 'daftar.json'), encoding='utf-8'))
 assert len(CUST) >= 12, len(CUST)
 SEL_W, SEL_H, KOLOM, BARIS_POLA = 132, 76, 5, 14
 W, H = SEL_W * KOLOM, SEL_H * BARIS_POLA
+# POLA BERJALAN (2026-09-25, "apa logonya gerak kesamping horizontal atau
+# misal ke barat daya/barat laut ya?"): seluruh pola bergeser TEPAT satu ubin
+# lalu berulang -- sambungannya tak terlihat. ARAH: 'barat daya' (kiri-bawah),
+# 'barat laut' (kiri-atas) atau 'barat' (horizontal). Transform saja.
+ARAH, LAJU_PX_DTK = 'barat daya', 25
+GESER_X, GESER_Y = {'barat daya': (-W, H), 'barat laut': (-W, -H), 'barat': (-W, 0)}[ARAH]
+JALAN_DTK = round((GESER_X ** 2 + GESER_Y ** 2) ** 0.5 / LAJU_PX_DTK)
 
 
 def gambar_pola():
@@ -178,7 +185,15 @@ html = '''<!DOCTYPE html>
     -webkit-mask-image: radial-gradient(ellipse 62% 40% at 50% 47%, transparent 30%, #000 78%);
             mask-image: radial-gradient(ellipse 62% 40% at 50% 47%, transparent 30%, #000 78%); }
   .pola-putar { position: absolute; inset: 0; }
-  .pola-isi { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  /* Lebih besar satu ubin ke arah datangnya pola, supaya layar tetap tertutup
+     sepanjang geseran. Salinan terang di pita kilau ikut bergerak bersama
+     (animasi sama, mulai bersamaan). */
+  .pola-isi { position: absolute; display: block; left: ''' + ('%dpx' % (-GESER_X if GESER_X > 0 else 0)) + ''';
+    top: ''' + ('%dpx' % (-GESER_Y if GESER_Y > 0 else 0)) + ''';
+    width: calc(100% + ''' + str(abs(GESER_X)) + '''px); height: calc(100% + ''' + str(abs(GESER_Y)) + '''px);
+    will-change: transform; animation: polaJalan ''' + str(JALAN_DTK) + '''s linear infinite; }
+  @keyframes polaJalan { from { transform: translate(0, 0); }
+    to { transform: translate(''' + str(GESER_X) + '''px, ''' + str(GESER_Y) + '''px); } }
   .pola-dasar { opacity: .22; }
   .kilau-pita { position: absolute; top: 0; bottom: 0; left: 0; width: 260px; overflow: hidden;
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 45%, #000 55%, transparent);
@@ -211,7 +226,7 @@ html = '''<!DOCTYPE html>
   }
   @media (prefers-reduced-motion: reduce) {
     #muat { transition: none; }
-    .kilau-pita, .kilau-isi { animation: none; }
+    .kilau-pita, .kilau-isi, .pola-isi { animation: none; }
     .kilau-pita { display: none; }
   }
 </style>
