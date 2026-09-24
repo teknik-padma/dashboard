@@ -105,12 +105,25 @@ html = '''<!DOCTYPE html>
     opacity: .7; display: none;
   }
   #muat.offline .putus { display: block; }
+  /* Dashboard sudah siap sebelum laser selesai: tombol lanjut muncul di bawah
+     logo (diminta: "ditunggu selesai baru masuk, tapi kalau sudah selesai
+     loading ada opsi klik untuk melanjutkan"). Seluruh layar ikut bisa diketuk. */
+  .lanjut {
+    margin-top: 32px; min-height: 44px; padding: 10px 22px; border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, .38); background: transparent; color: #fff;
+    font: 600 14px/1.2 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    opacity: 0; visibility: hidden; transition: opacity .3s ease; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #muat.siap .lanjut { opacity: .9; visibility: visible; }
+  #muat.siap { cursor: pointer; }
   @media (prefers-reduced-motion: reduce) { #muat { transition: none; } }
 </style>
 </head>
 <body>
 <div id="muat" role="status" aria-label="Memuat Padma Group">
 ''' + svg + '''
+<button type="button" class="lanjut" id="lanjut">Ketuk untuk melanjutkan</button>
 <div class="putus">Tidak ada koneksi internet. Dashboard terbuka otomatis begitu tersambung.</div>
 </div>
 <iframe id="dasbor" src="''' + EXEC + '''"
@@ -126,7 +139,7 @@ html = '''<!DOCTYPE html>
   var dasbor = document.getElementById('dasbor');
   var h = document.documentElement;
   var bilah = document.getElementById('warnaBilah');
-  var jalan = true, siap = false, mulai = Date.now();
+  var jalan = true, siap = false, animSelesai = false, mulai = Date.now();
   var TAHAN = /[?&]tahan=1/.test(location.search);
 
   function simpan(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -158,8 +171,16 @@ html = '''<!DOCTYPE html>
       simpan('padmaBawah', d.bawah);
       warnaBilah();
     }
-    if (d.jenis === 'siap') { siap = true; lepas(); }
+    if (d.jenis === 'siap') { siap = true; siapLanjut(); }
   });
+  /* Masuk = laser selesai DAN dashboard siap. Siap lebih dulu -> tombol lanjut
+     (atau ketuk di mana saja); laser selesai lebih dulu -> masuk begitu siap.
+     Jaring 25 dtk tetap: "siap" bisa tidak pernah datang. */
+  function siapLanjut() {
+    if (animSelesai) lepas();
+    else muat.classList.add('siap');
+  }
+  muat.addEventListener('click', function () { if (siap) lepas(); });
   setTimeout(lepas, 25000);
 
   /* Tanpa internet: layar muat berkata begitu; tersambung lagi sebelum dashboard
@@ -278,7 +299,7 @@ html = '''<!DOCTYPE html>
         else c.setAttribute('opacity', 0);
       });
     });
-    if (dt >= AKHIR) return;
+    if (dt >= AKHIR) { animSelesai = true; if (siap) lepas(); return; }
     berikut(langkah);
   })();
 })();
