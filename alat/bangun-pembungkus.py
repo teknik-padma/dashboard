@@ -56,6 +56,33 @@ svg = ('<svg id="laser" viewBox="%d %d %d %d" aria-hidden="true">' % VB
        + logo_svg('firstjet', FJ, '#FFFFFF')
        + '</svg>')
 LEBAR_PX = 320
+
+# Pola latar selang-seling (2026-09-25): ubin 2 langkah x 2 baris. Baris 0:
+# Padma, FirstJet; baris 1 bergeser setengah langkah: FirstJet, Padma (Padma di
+# tepi ubin digambar dua kali, kiri dan kanan, supaya tidak terpotong). Logo
+# digambar sekali di <defs>, sisanya <use> -> diukir serentak.
+LANGKAH, BARIS, TINGGI_LOGO = 124, 104, 46
+SK = TINGGI_LOGO / 100.0
+
+
+def ubin_logo(k, L, pusat_x):
+    # tirai klip di koordinat ASLI logo (path-nya tidak ikut digeser translate)
+    return ('<g id="ubin-%s" transform="scale(%.3f) translate(%.1f 0)">'
+            '<clipPath id="ubinKlip-%s"><rect id="ubinTirai-%s" x="%.1f" y="-52" width="120" height="0"/></clipPath>'
+            '<path fill="#fff" fill-rule="evenodd" clip-path="url(#ubinKlip-%s)" d="%s"/>'
+            '<path id="ubinTepi-%s" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" pathLength="1"'
+            ' style="stroke-dasharray:1 2;stroke-dashoffset:1;opacity:0" d="%s"/>'
+            '</g>') % (k, SK, -pusat_x, k, k, pusat_x - 60, k, L['isi'], k, L['isi'])
+
+
+W, H = 2 * LANGKAH, 2 * BARIS
+TEMPAT = (('p', LANGKAH * .5, BARIS * .5), ('f', LANGKAH * 1.5, BARIS * .5),
+          ('f', LANGKAH * 1.0, BARIS * 1.5), ('p', 0, BARIS * 1.5), ('p', W, BARIS * 1.5))
+POLA_SVG = ('<svg class="pola-isi pola-dasar"><defs>'
+            + ubin_logo('p', PADMA, 0) + ubin_logo('f', FJ, 65)
+            + '<pattern id="ubin" patternUnits="userSpaceOnUse" width="%d" height="%d" x="-8" y="-20">' % (W, H)
+            + ''.join('<use href="#ubin-%s" transform="translate(%.1f %.1f)"/>' % (k, x, y) for k, x, y in TEMPAT)
+            + '</pattern></defs><rect width="100%" height="100%" fill="url(#ubin)"/></svg>')
 DATA_LASER = json.dumps({
                          'baris': [PADMA['baris'], FJ['baris']]}, separators=(',', ':'))
 
@@ -124,7 +151,7 @@ html = '''<!DOCTYPE html>
   #muat {
     position: fixed; inset: 0; z-index: 2; background: #000; color: #fff;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    transition: opacity .26s ease;
+    transition: opacity .55s ease;
   }
   #muat.lepas { opacity: 0; pointer-events: none; }
   #laser { width: min(''' + str(LEBAR_PX) + '''px, 86vw); height: auto; aspect-ratio: ''' + '%d / %d' % (VB[2], VB[3]) + '''; overflow: visible; }
@@ -134,42 +161,27 @@ html = '''<!DOCTYPE html>
     opacity: .7; display: none;
   }
   #muat.offline .putus { display: block; }
-  /* Dashboard sudah siap sebelum laser selesai: tombol lanjut muncul di bawah
-     logo (diminta: "ditunggu selesai baru masuk, tapi kalau sudah selesai
-     loading ada opsi klik untuk melanjutkan"). Seluruh layar ikut bisa diketuk. */
-  /* TEKS BERNAPAS (2026-09-25): kilau menyapu + cincin berdenyut dibuang,
-     dilaporkan "kelihatan ai generate sekali". Tetap tidak diam (permintaan
-     lama "jangan idle, ada light animation"): tulisannya terang-redup pelan.
-     Hanya opacity. Area ketuk tetap 44px; seluruh layar juga bisa diketuk. */
-  .lanjut {
-    position: relative; z-index: 1; margin-top: 44px; min-height: 44px; padding: 12px 16px;
-    border: 0; background: none; color: #fff; cursor: pointer;
-    font: 600 11.5px/1.2 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    letter-spacing: .22em; text-transform: uppercase;
-    opacity: 0; visibility: hidden; transition: opacity .3s ease;
-    -webkit-tap-highlight-color: transparent;
-  }
-  #muat.siap .lanjut { visibility: visible; animation: napas 2.8s ease-in-out infinite alternate; }
-  @keyframes napas { from { opacity: .35; } to { opacity: .95; } }
-  /* POLA MONOGRAM + KILAU MENYAPU (2026-09-25, mockup varian D disetujui).
-     Pola Padma samar miring -20 derajat, memudar di sekitar logo laser; tiap 5
-     dtk satu pita cahaya lewat. Pita maju + salinan pola terang mundur sama
-     besar -> polanya diam, cahayanya yang bergerak. Transform saja. */
+  /* "Tap to continue" DIBUANG (2026-09-25, "gasuka ada tulisan tap to
+     continue ... kalo udah selesai login aja tp yg smooth"): dashboard siap
+     sebelum laser selesai -> sisa ukiran disusul dalam SUSUL_MS, lalu pudar. */
+  /* POLA SELANG-SELING (2026-09-25, contoh gambar permen dari pemilik): Padma
+     dan FirstJet bergantian, baris berselang setengah langkah, tidak miring;
+     semuanya DIUKIR SERENTAK dengan logo tengah (satu <pattern>, jadi satu
+     tulisan atribut per frame untuk semua salinan). Kilau menyapu tetap. */
   #laser, .putus { position: relative; z-index: 1; }
-  .pola { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: .3;
+  .pola { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: .5;
     -webkit-mask-image: radial-gradient(ellipse 62% 40% at 50% 47%, transparent 30%, #000 78%);
             mask-image: radial-gradient(ellipse 62% 40% at 50% 47%, transparent 30%, #000 78%); }
-  .pola-putar { position: absolute; left: -60%; top: -60%; width: 220%; height: 220%; transform: rotate(-20deg); }
-  .pola-isi { position: absolute; inset: -128px; background: url("__POLA_UBIN__") 0 0 / 128px 128px; }
-  .pola-dasar { opacity: .17; }
+  .pola-putar { position: absolute; inset: 0; }
+  .pola-isi { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .pola-dasar { opacity: .22; }
   .kilau-pita { position: absolute; top: 0; bottom: 0; left: 0; width: 260px; overflow: hidden;
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 45%, #000 55%, transparent);
             mask-image: linear-gradient(90deg, transparent, #000 45%, #000 55%, transparent);
     transform: translateX(-300px); animation: kilauPita 5s ease-in-out infinite; }
-  .kilau-isi { position: absolute; top: 0; bottom: 0; left: 0; width: 220vw; animation: kilauIsi 5s ease-in-out infinite; }
-  @keyframes kilauPita { 0% { transform: translateX(-300px); } 45%, 100% { transform: translateX(calc(220vw + 40px)); } }
-  @keyframes kilauIsi  { 0% { transform: translateX(300px); }  45%, 100% { transform: translateX(calc(-220vw - 40px)); } }
-  #muat.siap { cursor: pointer; }
+  .kilau-isi { position: absolute; top: 0; bottom: 0; left: 0; width: 100vw; animation: kilauIsi 5s ease-in-out infinite; }
+  @keyframes kilauPita { 0% { transform: translateX(-300px); } 45%, 100% { transform: translateX(calc(100vw + 40px)); } }
+  @keyframes kilauIsi  { 0% { transform: translateX(300px); }  45%, 100% { transform: translateX(calc(-100vw - 40px)); } }
   /* Kamera Scan QR untuk dashboard (2026-09-24): iframe Apps Script tidak
      diberi izin kamera oleh bingkai Google, halaman ini boleh. */
   #kamera {
@@ -194,7 +206,6 @@ html = '''<!DOCTYPE html>
   }
   @media (prefers-reduced-motion: reduce) {
     #muat { transition: none; }
-    #muat.siap .lanjut { animation: none; opacity: .8; }
     .kilau-pita, .kilau-isi { animation: none; }
     .kilau-pita { display: none; }
   }
@@ -202,9 +213,8 @@ html = '''<!DOCTYPE html>
 </head>
 <body>
 <div id="muat" role="status" aria-label="Memuat Padma Group">
-<div class="pola" aria-hidden="true"><div class="pola-putar"><div class="pola-isi pola-dasar"></div><div class="kilau-pita"><div class="kilau-isi"><div class="pola-isi"></div></div></div></div></div>
+<div class="pola" aria-hidden="true"><div class="pola-putar">''' + POLA_SVG + '''<div class="kilau-pita"><div class="kilau-isi"><svg class="pola-isi"><rect width="100%" height="100%" fill="url(#ubin)"/></svg></div></div></div></div>
 ''' + svg + '''
-<button type="button" class="lanjut" id="lanjut">Tap to continue</button>
 <div class="putus">Tidak ada koneksi internet. Dashboard terbuka otomatis begitu tersambung.</div>
 </div>
 <div id="kamera" role="dialog" aria-label="Scan QR Mesin">
@@ -228,6 +238,13 @@ html = '''<!DOCTYPE html>
   var h = document.documentElement;
   var bilah = document.getElementById('warnaBilah');
   var jalan = true, siap = false, animSelesai = false, mulai = Date.now();
+  /* Jam laser: normal = ms sejak dibuka; sesudah "siap" dipercepat supaya sisa
+     ukiran selesai dalam SUSUL_MS (tidak dipotong, tidak ditunggu). */
+  var SUSUL_MS = 1100, susul = null;
+  function waktu() {
+    var kini = Date.now();
+    return susul ? susul.dt0 + (kini - susul.t0) * susul.laju : kini - mulai;
+  }
   var TAHAN = /[?&]tahan=1/.test(location.search);
 
   function simpan(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -236,7 +253,7 @@ html = '''<!DOCTYPE html>
     jalan = false;
     muat.classList.add('lepas');
     warnaBilah();
-    setTimeout(function () { muat.style.display = 'none'; }, 300);
+    setTimeout(function () { muat.style.display = 'none'; }, 600);
   }
   function warnaBilah() {
     if (jalan) return;  // layar muat masih tampil: bilah tetap hitam
@@ -395,14 +412,15 @@ html = '''<!DOCTYPE html>
   /* Pindah aplikasi / layar mati: kamera dimatikan, dashboard diberi BATAL
      supaya tombol "Pindai lagi" muncul di sana. */
   document.addEventListener('visibilitychange', function () { if (document.hidden && kam.minta) kameraJawab('BATAL'); });
-  /* Masuk = laser selesai DAN dashboard siap. Siap lebih dulu -> tombol lanjut
-     (atau ketuk di mana saja); laser selesai lebih dulu -> masuk begitu siap.
-     Jaring 25 dtk tetap: "siap" bisa tidak pernah datang. */
+  /* Masuk = laser selesai DAN dashboard siap. Siap lebih dulu -> jam laser
+     dipercepat (sisa ukiran dalam SUSUL_MS), lalu pudar sendiri; laser selesai
+     lebih dulu -> masuk begitu siap. Jaring 25 dtk tetap. */
   function siapLanjut() {
-    if (animSelesai) lepas();
-    else muat.classList.add('siap');
+    if (animSelesai) { lepas(); return; }
+    if (susul) return;
+    var dt = waktu();
+    susul = { t0: Date.now(), dt0: dt, laju: Math.max(1, (AKHIR - dt) / SUSUL_MS) };
   }
-  muat.addEventListener('click', function () { if (siap) lepas(); });
   setTimeout(lepas, 25000);
 
   /* Tanpa internet: layar muat berkata begitu; tersambung lagi sebelum dashboard
@@ -475,6 +493,25 @@ html = '''<!DOCTYPE html>
     J.atas = J.baris[0][0] - 3;
     J.tirai.setAttribute('y', J.atas);
   });
+  /* Pola latar: satu garis tepi per jenis logo (pathLength=1, dash menyapu
+     seluruh sub-path) + tirai arsir, jadwal sama dengan logo tengah. Ditulis
+     hanya kalau berubah. */
+  var POLA = ['p', 'f'].map(function (k) {
+    return { tepi: document.getElementById('ubinTepi-' + k), tirai: document.getElementById('ubinTirai-' + k), lama: '' };
+  });
+  function polaLangkah(dt) {
+    var pt = jalur(dt, JADWAL[0].tepi), pa = jalur(dt, JADWAL[0].arsir);
+    var op = pt > 0 ? 1 - jalur(dt, [JADWAL[0].arsir[1], JADWAL[0].arsir[1] + PUDAR_MS]) : 0;
+    var off = 1 - mulus(pt), tinggi = pa <= 0 ? 0 : pa >= 1 ? 120 : 104 * pa;
+    var kunci = off.toFixed(4) + '|' + op.toFixed(3) + '|' + tinggi.toFixed(2);
+    POLA.forEach(function (U) {
+      if (!U.tepi || U.lama === kunci) return;
+      U.lama = kunci;
+      U.tepi.style.strokeDashoffset = off;
+      U.tepi.style.opacity = op;
+      U.tirai.setAttribute('height', tinggi);
+    });
+  }
   function mulus(x) { return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
   function jalur(dt, r) { return Math.max(0, Math.min(1, (dt - r[0]) / (r[1] - r[0]))); }
 
@@ -526,7 +563,8 @@ html = '''<!DOCTYPE html>
   }
   (function langkah() {
     if (!jalan) return;
-    var dt = Date.now() - mulai;
+    var dt = waktu();
+    polaLangkah(dt);
     JADWAL.forEach(function (J) {
       var pt = jalur(dt, J.tepi);
       var pt2 = tepi(J, pt), pos = arsir(J, jalur(dt, J.arsir)) || pt2;  // dua-duanya selalu dijalankan (tirai)
@@ -607,14 +645,6 @@ self.addEventListener('fetch', (e) => {
 });
 '''
 
-# Ubin pola: dua logo Padma 20px di ubin 128px (mockup varian D), data-URI.
-from urllib.parse import quote
-UBIN = ('<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">'
-        + ''.join('<path transform="translate(%d %d) scale(.2)" fill="#fff" fill-rule="evenodd" d="%s"/>' % (x, y, PADMA['isi'])
-                  for x, y in ((32, 32), (96, 96)))
-        + '</svg>')
-html = html.replace('__POLA_UBIN__', 'data:image/svg+xml,' + quote(UBIN, safe=''))
-assert '__POLA_UBIN__' not in html
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8', newline='\n').write(html)
 open(os.path.join(OUT, 'manifest.json'), 'w', encoding='utf-8', newline='\n').write(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
 open(os.path.join(OUT, 'sw.js'), 'w', encoding='utf-8', newline='\n').write(sw)
