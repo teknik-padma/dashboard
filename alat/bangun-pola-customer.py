@@ -61,9 +61,9 @@ def siluet(gambar):
 daftar = json.load(open(os.path.join(ALAT, 'logo-customer.json'), encoding='utf-8'))
 # Cap Lang (Eagle Indo Pharma): kotak merah polos tanpa isi terang -> siluetnya
 # persegi putih; di Index.html pun masih "asumsi, TOLONG DIKONFIRMASI".
-# wings surya / ciba: favicon tebakan domain yang SALAH (logo WordPress dan
-# huruf "A" polos) -- di dashboard pun begitu; perbaiki di BRAND_DOMAINS.
-LEWATI = {'eagle indo pharma', 'wings surya', 'ciba'}
+# (wings surya / ciba dulu juga dilewati: favicon tebakan domain yang salah.
+# Dibetulkan di Index.html v704 -- wings ke WINGS.png, ciba tanpa logo.)
+LEWATI = {'eagle indo pharma'}
 daftar = [d for d in daftar if d['nama'] not in LEWATI]
 for f in os.listdir(KELUAR):
     if f.endswith('.png'):
