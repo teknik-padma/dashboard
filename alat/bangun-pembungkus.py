@@ -137,32 +137,38 @@ html = '''<!DOCTYPE html>
   /* Dashboard sudah siap sebelum laser selesai: tombol lanjut muncul di bawah
      logo (diminta: "ditunggu selesai baru masuk, tapi kalau sudah selesai
      loading ada opsi klik untuk melanjutkan"). Seluruh layar ikut bisa diketuk. */
+  /* TEKS BERNAPAS (2026-09-25): kilau menyapu + cincin berdenyut dibuang,
+     dilaporkan "kelihatan ai generate sekali". Tetap tidak diam (permintaan
+     lama "jangan idle, ada light animation"): tulisannya terang-redup pelan.
+     Hanya opacity. Area ketuk tetap 44px; seluruh layar juga bisa diketuk. */
   .lanjut {
-    margin-top: 32px; min-height: 44px; padding: 10px 22px; border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, .38); background: transparent; color: #fff;
-    font: 600 14px/1.2 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    opacity: 0; visibility: hidden; transition: opacity .3s ease; cursor: pointer;
+    position: relative; z-index: 1; margin-top: 44px; min-height: 44px; padding: 12px 16px;
+    border: 0; background: none; color: #fff; cursor: pointer;
+    font: 600 11.5px/1.2 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    letter-spacing: .22em; text-transform: uppercase;
+    opacity: 0; visibility: hidden; transition: opacity .3s ease;
     -webkit-tap-highlight-color: transparent;
   }
-  #muat.siap .lanjut { opacity: .95; visibility: visible; }
-  /* Tidak diam (diminta "jangan idle, ada light animation"): kilau menyapu
-     tulisan + cincin cahaya berdenyut. Hanya transform/opacity, jadi digerakkan
-     compositor dan tidak ikut tersendat waktu dashboard sibuk dimuat. */
-  .lanjut { position: relative; overflow: hidden; isolation: isolate; }
-  .lanjut::after {
-    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-    background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .30) 50%, transparent 70%);
-    transform: translateX(-130%);
-  }
-  .lanjut::before {
-    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, .55), 0 0 18px rgba(255, 255, 255, .35);
-    opacity: 0;
-  }
-  #muat.siap .lanjut::after { animation: kilau 2.6s ease-in-out infinite; }
-  #muat.siap .lanjut::before { animation: denyut 2.6s ease-in-out infinite; }
-  @keyframes kilau { 0% { transform: translateX(-130%); } 55%, 100% { transform: translateX(130%); } }
-  @keyframes denyut { 0%, 100% { opacity: 0; } 40% { opacity: 1; } }
+  #muat.siap .lanjut { visibility: visible; animation: napas 2.8s ease-in-out infinite alternate; }
+  @keyframes napas { from { opacity: .35; } to { opacity: .95; } }
+  /* POLA MONOGRAM + KILAU MENYAPU (2026-09-25, mockup varian D disetujui).
+     Pola Padma samar miring -20 derajat, memudar di sekitar logo laser; tiap 5
+     dtk satu pita cahaya lewat. Pita maju + salinan pola terang mundur sama
+     besar -> polanya diam, cahayanya yang bergerak. Transform saja. */
+  #laser, .putus { position: relative; z-index: 1; }
+  .pola { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: .3;
+    -webkit-mask-image: radial-gradient(ellipse 62% 40% at 50% 47%, transparent 30%, #000 78%);
+            mask-image: radial-gradient(ellipse 62% 40% at 50% 47%, transparent 30%, #000 78%); }
+  .pola-putar { position: absolute; left: -60%; top: -60%; width: 220%; height: 220%; transform: rotate(-20deg); }
+  .pola-isi { position: absolute; inset: -128px; background: url("__POLA_UBIN__") 0 0 / 128px 128px; }
+  .pola-dasar { opacity: .17; }
+  .kilau-pita { position: absolute; top: 0; bottom: 0; left: 0; width: 260px; overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 45%, #000 55%, transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 45%, #000 55%, transparent);
+    transform: translateX(-300px); animation: kilauPita 5s ease-in-out infinite; }
+  .kilau-isi { position: absolute; top: 0; bottom: 0; left: 0; width: 220vw; animation: kilauIsi 5s ease-in-out infinite; }
+  @keyframes kilauPita { 0% { transform: translateX(-300px); } 45%, 100% { transform: translateX(calc(220vw + 40px)); } }
+  @keyframes kilauIsi  { 0% { transform: translateX(300px); }  45%, 100% { transform: translateX(calc(-220vw - 40px)); } }
   #muat.siap { cursor: pointer; }
   /* Kamera Scan QR untuk dashboard (2026-09-24): iframe Apps Script tidak
      diberi izin kamera oleh bingkai Google, halaman ini boleh. */
@@ -188,14 +194,17 @@ html = '''<!DOCTYPE html>
   }
   @media (prefers-reduced-motion: reduce) {
     #muat { transition: none; }
-    #muat.siap .lanjut::after, #muat.siap .lanjut::before { animation: none; }
+    #muat.siap .lanjut { animation: none; opacity: .8; }
+    .kilau-pita, .kilau-isi { animation: none; }
+    .kilau-pita { display: none; }
   }
 </style>
 </head>
 <body>
 <div id="muat" role="status" aria-label="Memuat Padma Group">
+<div class="pola" aria-hidden="true"><div class="pola-putar"><div class="pola-isi pola-dasar"></div><div class="kilau-pita"><div class="kilau-isi"><div class="pola-isi"></div></div></div></div></div>
 ''' + svg + '''
-<button type="button" class="lanjut" id="lanjut">Ketuk untuk melanjutkan</button>
+<button type="button" class="lanjut" id="lanjut">Tap to continue</button>
 <div class="putus">Tidak ada koneksi internet. Dashboard terbuka otomatis begitu tersambung.</div>
 </div>
 <div id="kamera" role="dialog" aria-label="Scan QR Mesin">
@@ -261,13 +270,17 @@ html = '''<!DOCTYPE html>
       var kamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
       var tokenTitip = '';
       try { tokenTitip = localStorage.getItem('padmaToken') || ''; } catch (err) {}
-      try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: kamera, token: tokenTitip }, asal); } catch (err) {}
+      try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: kamera, token: tokenTitip, muatUlang: true }, asal); } catch (err) {}
     }
     if (d.jenis === 'simpanToken' && typeof d.token === 'string' && d.token.length < 2000) {
       try { if (d.token) localStorage.setItem('padmaToken', d.token); else localStorage.removeItem('padmaToken'); } catch (err) {}
     }
     if (d.jenis === 'tema' && e.source) { sumberDasbor = { w: e.source, asal: asal }; kirimAman(); }
     if (d.jenis === 'pindaiQr' && typeof d.id === 'string' && e.source) kameraBuka(e.source, asal, d.id);
+    /* Muat ulang SENYAP atas permintaan dashboard (2026-09-25): sesudah Keluar dan
+       sebelum login ulang. Bingkai Google yang me-reload dirinya sendiri berakhir
+       layar putih; halaman ini boleh. Diumumkan lewat muatUlang:true di atas. */
+    if (d.jenis === 'muatUlang') location.reload();
     /* Tautan tiket Scan QR dibuka langsung (diminta "gausah diklik dulu"):
        halaman puncak boleh pindah tanpa ketukan, iframe tidak. Hanya
        script.google.com -- pesan dari Google pun tidak boleh membawa ke
@@ -594,6 +607,14 @@ self.addEventListener('fetch', (e) => {
 });
 '''
 
+# Ubin pola: dua logo Padma 20px di ubin 128px (mockup varian D), data-URI.
+from urllib.parse import quote
+UBIN = ('<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">'
+        + ''.join('<path transform="translate(%d %d) scale(.2)" fill="#fff" fill-rule="evenodd" d="%s"/>' % (x, y, PADMA['isi'])
+                  for x, y in ((32, 32), (96, 96)))
+        + '</svg>')
+html = html.replace('__POLA_UBIN__', 'data:image/svg+xml,' + quote(UBIN, safe=''))
+assert '__POLA_UBIN__' not in html
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8', newline='\n').write(html)
 open(os.path.join(OUT, 'manifest.json'), 'w', encoding='utf-8', newline='\n').write(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
 open(os.path.join(OUT, 'sw.js'), 'w', encoding='utf-8', newline='\n').write(sw)

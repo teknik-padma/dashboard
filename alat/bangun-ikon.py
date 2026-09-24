@@ -95,6 +95,9 @@ def ikon(ukuran, porsi):
 
 
 for uk in (192, 512):
-    cv2.imwrite(os.path.join(OUT, 'icon-%d.png' % uk), ikon(uk, 0.80))
-    cv2.imwrite(os.path.join(OUT, 'icon-maskable-%d.png' % uk), ikon(uk, 0.68))
+    # 2026-09-25: dikecilkan lagi (80->72, 68->58), dilaporkan "ikon loading masuk
+    # padma logo pinggir2nya masih kayak kepotong ... kecilin aja logonya" --
+    # splash Android memotong ke lingkaran tengah, di luar kendali manifest.
+    cv2.imwrite(os.path.join(OUT, 'icon-%d.png' % uk), ikon(uk, 0.72))
+    cv2.imwrite(os.path.join(OUT, 'icon-maskable-%d.png' % uk), ikon(uk, 0.58))
 print('ok')
