@@ -2,7 +2,7 @@
    sendiri) yang di-cache; dashboard di script.google.com TIDAK pernah disentuh.
    Jaringan dulu supaya pembaruan langsung terpakai; cache kalau offline.
    Naikkan VERSI tiap berkas di BERKAS berubah nama. */
-const VERSI = 'padma-pembungkus-v1';
+const VERSI = 'padma-pembungkus-v2';
 const BERKAS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {

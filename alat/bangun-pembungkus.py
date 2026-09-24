@@ -3,42 +3,55 @@ Pakai: python bangun-pembungkus.py <folder repo pembungkus>
 Menulis index.html, manifest.json, sw.js (ikon dibuat terpisah)."""
 import json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from huruf_laser import tulisan
+from jiplak_logo import jiplak
 
 OUT = sys.argv[1]
-IDX = open(r'C:/RAYHANKHALID/WORK/DASHBOARD PADMA/Index.html', 'rb').read().decode('utf-8')
-a = IDX.index('<svg class="ag-laser"')
-b = IDX.index('</svg>', a) + len('</svg>')
-svg = IDX[a:b]
-assert svg.count('agl-gores') >= 8, svg.count('agl-gores')
+ALAT = os.path.dirname(os.path.abspath(__file__))
 
-# Tulisan PADMA GROUP garis tunggal di bawah logo, satu SVG dengan logonya
-# (satu titik laser berpindah dari logo ke huruf).
-paths, lebar = tulisan('PADMA GROUP', 1.6, 0, 78)
-VB_X, VB_W = -82, 164
-VB_Y, VB_H = -60, 158
-assert lebar < VB_W - 4, lebar
-huruf = ''.join('<path class="agl-teks" d="%s"/>' % d for d in paths)
-svg = svg.replace('class="ag-laser"', 'id="laser"')
-svg = svg.replace('viewBox="-60 -60 120 120"', 'viewBox="%d %d %d %d"' % (VB_X, VB_Y, VB_W, VB_H))
-svg = svg.replace('stroke="#fff"', 'stroke="currentColor"')
-svg = svg.replace('<rect class="agl-titik"',
-                  '<g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" '
-                  'stroke-linejoin="round">' + huruf + '</g><rect class="agl-titik" fill="currentColor"')
-assert 'viewBox="%d %d' % (VB_X, VB_Y) in svg
-LEBAR_PX = round(104 * VB_W / 120)
-TINGGI_PX = round(104 * VB_H / 120)
+# Dua logo dijiplak dari gambar aslinya (alat/logo-*.{jpg,png}, dikirim pemilik
+# 2026-09-24), tinggi sama 100 satuan. Padma diukir di tengah, lalu bergeser
+# ke kiri (GESER), FirstJet diukir di kanannya. Laser = garis tepi (kontur),
+# lalu isi diarsir baris demi baris.
+PADMA = jiplak(os.path.join(ALAT, 'logo-padma.jpg'), 'terang', 100, 0, 'luas')
+FJ = jiplak(os.path.join(ALAT, 'logo-firstjet.png'), 'putih', 100, 65, 'dekat')
+# IoU Padma ~0,92, bukan ~0,98: gambar aslinya memotong cincin ~2,7 px di
+# keempat sisi, dan cincin di sini lingkaran sejati (tidak ikut terpotong).
+for nama, L, batas in (('padma', PADMA, 0.9), ('firstjet', FJ, 0.97)):
+    assert L['iou'] > batas, (nama, L['iou'])
+GESER = -62.5
+VB = (-118, -56, 236, 112)
+assert PADMA['kotak'][0] + GESER > VB[0] and FJ['kotak'][2] < VB[0] + VB[2], (PADMA['kotak'], FJ['kotak'])
+
+
+def logo_svg(kelas, L, isi):
+    gores = ''.join('<path class="gores" d="%s"/>' % d for d in L['gores'])
+    return ('<g class="%s">'
+            '<clipPath id="arsir-%s"><rect class="tirai" x="-200" y="-60" width="400" height="0"/></clipPath>'
+            '<path class="isi" fill="%s" fill-rule="evenodd" clip-path="url(#arsir-%s)" d="%s"/>'
+            '<g class="tepi" fill="none" stroke="currentColor" stroke-width=".8" stroke-linejoin="round" opacity="0">%s</g>'
+            '</g>') % (kelas, kelas, isi, kelas, L['isi'], gores)
+
+
+# Padma putih polos seperti FirstJet (pemilik: "putih aja, jangan abu"; warna
+# perak gambar aslinya tidak dipakai).
+svg = ('<svg id="laser" viewBox="%d %d %d %d" aria-hidden="true">' % VB
+       + '<g id="gPadma" transform="translate(0 0)">' + logo_svg('padma', PADMA, '#FFFFFF') + '</g>'
+       + logo_svg('firstjet', FJ, '#FFFFFF')
+       + '<circle class="halo" r="3.2" fill="#fff" opacity="0"/><circle class="titik" r="1.1" fill="#fff" opacity="0"/>'
+       + '</svg>')
+LEBAR_PX = 320
+DATA_LASER = json.dumps({'geser': GESER,
+                         'baris': [PADMA['baris'], FJ['baris']]}, separators=(',', ':'))
 
 EXEC = 'https://script.google.com/macros/s/AKfycbzBRPeuPWoL3UdErFpn9WngpqQNiqvf9zH0dOhAsNEGlI1s9Uhm0XIGkWwalLctpwwR/exec'
-TERANG_LATAR, TERANG_BILAH = '#F5F7FB', '#FFFFFF'
-GELAP_LATAR, GELAP_BILAH = '#000000', '#16181C'
+TERANG_BILAH, GELAP_BILAH = '#FFFFFF', '#16181C'
 
 html = '''<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="''' + TERANG_BILAH + '''" id="warnaBilah">
+<meta name="theme-color" content="#000000" id="warnaBilah">
 <title>Padma Group</title>
 <meta name="description" content="Dashboard karyawan PT Padmacahaya Mitra Teknologi dan PT Padmacahaya Mitra Pratama.">
 <!-- PWA: bisa diinstal di Chrome HP (manifest + service worker), dan di iPhone
@@ -52,23 +65,22 @@ html = '''<!DOCTYPE html>
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <script>
 /* Tema diputuskan SEBELUM cat pertama: yang terakhir dikirim dashboard
-   (localStorage halaman ini), kalau belum pernah -> tema perangkat. Warna bilah
-   status (theme-color) ikut diputuskan di sini juga. */
+   (localStorage halaman ini), kalau belum pernah -> tema perangkat. Layar muat
+   selalu hitam (diminta pemilik), jadi bilah status (theme-color) hitam dulu;
+   warna bilah dashboard baru dipasang sesudah layar muat dilepas. */
 (function () {
   var h = document.documentElement, t = null, b = null;
   try { t = localStorage.getItem('padmaTema'); b = localStorage.getItem('padmaBawah'); } catch (e) {}
   if (t !== 'dark' && t !== 'light') t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   h.setAttribute('data-tema', t);
   if (b) h.style.setProperty('--bawah', b);
-  var m = document.getElementById('warnaBilah');
-  if (m) m.setAttribute('content', b || (t === 'dark' ? \'''' + GELAP_BILAH + '''\' : \'''' + TERANG_BILAH + '''\'));
 })();
 </script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap">
 <style>
-  :root { --latar: ''' + TERANG_LATAR + '''; --garis: #111827; --bawah: ''' + TERANG_BILAH + '''; }
-  html[data-tema="dark"] { --latar: ''' + GELAP_LATAR + '''; --garis: #FFFFFF; --bawah: ''' + GELAP_BILAH + '''; }
+  :root { --bawah: ''' + TERANG_BILAH + '''; }
+  html[data-tema="dark"] { --bawah: ''' + GELAP_BILAH + '''; }
   html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bawah); }
   /* Ruang atas/bawah seperti aplikasi: area poni/status dan garis navigasi HP
      (safe-area) TIDAK ditimpa iframe -- iframe tidak mengenal inset itu -- tapi
@@ -80,12 +92,13 @@ html = '''<!DOCTYPE html>
     border: 0; display: block;
   }
   #muat {
-    position: fixed; inset: 0; z-index: 2; background: var(--latar); color: var(--garis);
+    position: fixed; inset: 0; z-index: 2; background: #000; color: #fff;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     transition: opacity .26s ease;
   }
   #muat.lepas { opacity: 0; pointer-events: none; }
-  #laser { width: ''' + str(LEBAR_PX) + '''px; height: ''' + str(TINGGI_PX) + '''px; overflow: visible; }
+  #laser { width: min(''' + str(LEBAR_PX) + '''px, 86vw); height: auto; aspect-ratio: ''' + '%d / %d' % (VB[2], VB[3]) + '''; overflow: visible; }
+  #laser .halo { filter: blur(1.4px); }
   .putus {
     margin-top: 18px; font: 600 13px/1.4 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     opacity: .7; display: none;
@@ -103,8 +116,8 @@ html = '''<!DOCTYPE html>
         title="Padma Group"
         allow="camera; clipboard-read; clipboard-write; fullscreen; geolocation"></iframe>
 <script>
-/* Pembungkus Padma Group (2026-09-24). Layar muat = laser mengukir logo lalu
-   tulisan PADMA GROUP, SEKALI (logo 4500 ms, tulisan 2500 ms), dilepas waktu
+/* Pembungkus Padma Group (2026-09-24). Layar muat hitam = laser mengukir logo
+   Padma, bergeser ke kiri, lalu logo FirstJet, SEKALI (~8,2 dtk), dilepas waktu
    dashboard mengirim "siap" (postMessage). Pesan hanya diterima dari domain
    Google. Jaring pengaman 25 dtk; ?tahan=1 menahan layar ini (uji). */
 (function () {
@@ -120,9 +133,11 @@ html = '''<!DOCTYPE html>
     if (!jalan || TAHAN) return;
     jalan = false;
     muat.classList.add('lepas');
+    warnaBilah();
     setTimeout(function () { muat.style.display = 'none'; }, 300);
   }
   function warnaBilah() {
+    if (jalan) return;  // layar muat masih tampil: bilah tetap hitam
     var c = getComputedStyle(h).getPropertyValue('--bawah').trim();
     if (c) bilah.setAttribute('content', c);
   }
@@ -164,25 +179,83 @@ html = '''<!DOCTYPE html>
     });
   }
 
-  /* Laser: gerak yang sama dengan agLaserMulai_ di Index.html (luncur 0,35 x
-     jarak dengan titik mati), dua fase: logo lalu huruf. */
+  /* Laser, SEKALI (2026-09-24): Padma diukir di tengah (garis tepi, lalu isi
+     diarsir baris demi baris), bergeser ke kiri, lalu FirstJet diukir di
+     kanannya; sesudah itu diam sampai "siap". Luncur antar-goresan 0,35 x
+     jarak dengan titik mati, seperti agLaserMulai_ di Index.html. */
+  var D = ''' + DATA_LASER + ''';
   var svg = document.getElementById('laser');
-  var semua = Array.prototype.slice.call(svg.querySelectorAll('.agl-gores, .agl-teks'));
-  var nLogo = svg.querySelectorAll('.agl-gores').length;
-  var titik = svg.querySelector('.agl-titik');
-  var pj = semua.map(function (g) { var l = g.getTotalLength(); g.style.strokeDasharray = l; g.style.strokeDashoffset = l; return l; });
-  var fase = [{ mulai: 0, ms: 4500, ruas: [], total: 0 }, { mulai: 4500, ms: 2500, ruas: [], total: 0 }];
-  semua.forEach(function (g, i) {
-    var f = fase[i < nLogo ? 0 : 1];
-    if (i > 0) {
-      var a = semua[i - 1].getPointAtLength(pj[i - 1]), b = g.getPointAtLength(0);
-      var d = Math.hypot(b.x - a.x, b.y - a.y);
-      if (d > 0.5) { f.ruas.push({ luncur: true, L: d * 0.35 }); f.total += d * 0.35; }
-    }
-    f.ruas.push({ luncur: false, i: i, L: pj[i] }); f.total += pj[i];
+  var titik = svg.querySelector('.titik'), halo = svg.querySelector('.halo');
+  var gPadma = document.getElementById('gPadma');
+  var JADWAL = [  // ms sejak halaman dibuka
+    { tepi: [0, 2600], arsir: [2600, 3900], logo: svg.querySelector('.padma') },
+    { tepi: [5000, 7200], arsir: [7200, 8200], logo: svg.querySelector('.firstjet') }
+  ];
+  var GESER_MS = [4300, 5000], PUDAR_MS = 400, AKHIR = 8200 + PUDAR_MS;
+  JADWAL.forEach(function (J, n) {
+    J.gores = Array.prototype.slice.call(J.logo.querySelectorAll('.gores'));
+    J.tirai = J.logo.querySelector('.tirai');
+    J.baris = D.baris[n];
+    /* pathLength=1: dash dinormalkan peramban sendiri. getTotalLength dan panjang
+       yang digambar tidak persis sama -> tanpa ini potongan garis FirstJet sudah
+       tampil sebelum gilirannya (terlihat di pratinjau). */
+    J.tepiG = J.logo.querySelector('.tepi');
+    J.pj = J.gores.map(function (g) {
+      g.setAttribute('pathLength', 1); g.style.strokeDasharray = '1 2'; g.style.strokeDashoffset = 1;
+      return g.getTotalLength();
+    });
+    J.ruas = []; J.total = 0;
+    J.gores.forEach(function (g, i) {
+      if (i > 0) {
+        // kontur tertutup: ujung goresan sebelumnya = titik awalnya
+        var a = J.gores[i - 1].getPointAtLength(0), b = g.getPointAtLength(0);
+        var d = Math.hypot(b.x - a.x, b.y - a.y);
+        if (d > 0.5) { J.ruas.push({ luncur: true, L: d * 0.35 }); J.total += d * 0.35; }
+      }
+      J.ruas.push({ luncur: false, i: i, L: J.pj[i] }); J.total += J.pj[i];
+    });
+    /* Arsiran: panjang sapuan tiap baris = jumlah rentang terisi; baris genap
+       kiri->kanan, ganjil kanan->kiri, loncat antar-rentang dengan laser mati. */
+    J.sapu = J.baris.map(function (b) { return b[1].reduce(function (t, r) { return t + (r[1] - r[0]); }, 0); });
+    J.sapuTotal = J.sapu.reduce(function (t, x) { return t + x; }, 0);
+    J.atas = J.baris[0][0] - 3;
+    J.tirai.setAttribute('y', J.atas);
   });
-  var AKHIR = fase[1].mulai + fase[1].ms;
   function mulus(x) { return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
+  function jalur(dt, r) { return Math.max(0, Math.min(1, (dt - r[0]) / (r[1] - r[0]))); }
+
+  function tepi(J, p) {  // -> posisi titik laser, atau null (mati/diam)
+    var sisa = J.total * mulus(p), pos = null, aktif = p > 0 && p < 1;
+    J.ruas.forEach(function (s) {
+      var ambil = Math.max(0, Math.min(s.L, sisa));
+      if (!s.luncur) {
+        J.gores[s.i].style.strokeDashoffset = 1 - ambil / s.L;
+        if (aktif && ambil > 0 && ambil < s.L) pos = J.gores[s.i].getPointAtLength(ambil);
+      }
+      sisa -= ambil;
+    });
+    return pos;
+  }
+  function arsir(J, p) {
+    var sisa = J.sapuTotal * p, n = J.baris.length;
+    for (var i = 0; i < n; i++) {
+      if (sisa > J.sapu[i] && i < n - 1) { sisa -= J.sapu[i]; continue; }
+      var y = J.baris[i][0], rent = J.baris[i][1], pos = null;
+      if (i % 2) rent = rent.map(function (r) { return [r[1], r[0]]; }).reverse();
+      var maju = Math.min(sisa, J.sapu[i]);
+      for (var k = 0; k < rent.length; k++) {
+        var L = Math.abs(rent[k][1] - rent[k][0]);
+        if (maju <= L) { pos = { x: rent[k][0] + (rent[k][1] > rent[k][0] ? maju : -maju), y: y }; break; }
+        maju -= L;
+      }
+      // isi terbuka sampai baris yang sedang disapu; selesai = terbuka semua
+      // (p = 0: tertutup total -- tanpa ini 3 satuan teratas isi sudah tampil
+      // sejak awal, terlihat sebagai garis putus-putus di atas FIRSTJET)
+      J.tirai.setAttribute('height', p <= 0 ? 0 : Math.max(0, (p >= 1 ? y + 60 : y) - J.atas));
+      return p > 0 && p < 1 ? pos : null;
+    }
+    return null;
+  }
   /* Diputar rAF (selaras layar; setTimeout 30 ms dulu patah-patah), setTimeout
      100 ms cadangan kalau rAF tidak datang (tab di latar). */
   function berikut(fn) {
@@ -194,22 +267,20 @@ html = '''<!DOCTYPE html>
   (function langkah() {
     if (!jalan) return;
     var dt = Date.now() - mulai, pos = null;
-    fase.forEach(function (f) {
-      var p = Math.max(0, Math.min(1, (dt - f.mulai) / f.ms));
-      var aktif = p > 0 && p < 1;
-      var sisa = f.total * mulus(p);
-      f.ruas.forEach(function (s) {
-        var ambil = Math.max(0, Math.min(s.L, sisa));
-        if (!s.luncur) {
-          semua[s.i].style.strokeDashoffset = pj[s.i] - ambil;
-          if (aktif) pos = (ambil > 0 && ambil < s.L) ? semua[s.i].getPointAtLength(ambil) : (ambil > 0 ? null : pos);
-        } else if (aktif && ambil > 0) pos = null;
-        sisa -= ambil;
-      });
+    JADWAL.forEach(function (J) {
+      var pt = jalur(dt, J.tepi);
+      pos = tepi(J, pt) || pos;
+      pos = arsir(J, jalur(dt, J.arsir)) || pos;
+      // garis tepi: tak tampil sebelum gilirannya, pudar 400 ms sesudah isi penuh
+      J.tepiG.style.opacity = pt > 0 ? 1 - jalur(dt, [J.arsir[1], J.arsir[1] + PUDAR_MS]) : 0;
     });
-    if (pos) { titik.setAttribute('x', pos.x - 2.5); titik.setAttribute('y', pos.y - 2.5); titik.style.opacity = 1; }
-    else titik.style.opacity = 0;
-    if (dt >= AKHIR) { titik.style.opacity = 0; return; }
+    var g = mulus(jalur(dt, GESER_MS)) * D.geser;
+    gPadma.setAttribute('transform', 'translate(' + g.toFixed(2) + ' 0)');
+    [titik, halo].forEach(function (c) {
+      if (pos) { c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y); c.setAttribute('opacity', c === halo ? 0.45 : 1); }
+      else c.setAttribute('opacity', 0);
+    });
+    if (dt >= AKHIR) return;
     berikut(langkah);
   })();
 })();
@@ -226,8 +297,8 @@ manifest = {
     "start_url": "./",
     "scope": "./",
     "display": "standalone",
-    "background_color": TERANG_LATAR,
-    "theme_color": TERANG_BILAH,
+    "background_color": "#000000",
+    "theme_color": "#000000",
     "lang": "id",
     "icons": [
         {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
@@ -241,7 +312,7 @@ sw = '''/* Service worker pembungkus Padma Group. Hanya berkas pembungkus (situs
    sendiri) yang di-cache; dashboard di script.google.com TIDAK pernah disentuh.
    Jaringan dulu supaya pembaruan langsung terpakai; cache kalau offline.
    Naikkan VERSI tiap berkas di BERKAS berubah nama. */
-const VERSI = 'padma-pembungkus-v1';
+const VERSI = 'padma-pembungkus-v2';
 const BERKAS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -277,4 +348,4 @@ self.addEventListener('fetch', (e) => {
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8', newline='\n').write(html)
 open(os.path.join(OUT, 'manifest.json'), 'w', encoding='utf-8', newline='\n').write(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
 open(os.path.join(OUT, 'sw.js'), 'w', encoding='utf-8', newline='\n').write(sw)
-print('ok', len(html), 'px', LEBAR_PX, TINGGI_PX, 'huruf', len(paths))
+print('ok', len(html), 'iou padma', PADMA['iou'], 'firstjet', FJ['iou'])
