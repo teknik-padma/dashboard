@@ -4,6 +4,7 @@ Menulis index.html, manifest.json, sw.js, favicon.svg (ikon PNG: alat/bangun-iko
 import json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from jiplak_logo import jiplak
+from jejak_tengah import jejak_tengah
 
 OUT = sys.argv[1]
 ALAT = os.path.dirname(os.path.abspath(__file__))
@@ -12,7 +13,8 @@ ALAT = os.path.dirname(os.path.abspath(__file__))
 # 2026-09-24), tinggi sama 100 satuan, berdampingan (Padma digeser GESER ke
 # kiri). Keduanya diukir BERSAMAAN sejak awal, dua titik laser -- dulu Padma
 # dulu lalu geser, tapi boot cepat memotong FirstJet ("login ya login aja").
-# Laser = garis tepi (kontur), lalu isi diarsir baris demi baris.
+# Laser = satu titik per logo MEMBUKA isi logo di sepanjang garis tengahnya
+# (jejak_tengah.py, opsi A 2026-09-25 malam; dulu garis tepi lalu arsir).
 PADMA = jiplak(os.path.join(ALAT, 'logo-padma.jpg'), 'terang', 100, 0, 'luas')
 FJ = jiplak(os.path.join(ALAT, 'logo-firstjet.png'), 'putih', 100, 65, 'dekat')
 # IoU Padma ~0,92, bukan ~0,98: gambar aslinya memotong cincin ~2,7 px di
@@ -28,6 +30,20 @@ GESER = -62.5
 VB = (-124, -64, 248, 128)
 assert PADMA['kotak'][0] + GESER > VB[0] and FJ['kotak'][2] < VB[0] + VB[2], (PADMA['kotak'], FJ['kotak'])
 
+# GARIS TENGAH LASER (opsi A, 2026-09-25 malam, pemilik: "A go go go"). Sebab
+# gantinya diukur: fase garis tepi menggambar DUA sisi tiap pita (pita Padma
+# median 3,2 satuan, huruf FIRSTJET 1,5) -> 96% panjang Padma berupa dua garis
+# berjarak < 2 px, terbaca kabur di HP; baru tajam begitu isinya penuh. Kini
+# goresan mask di garis tengah membuka isi yang asli: tajam sejak awal.
+# Padma mulai di puncak kelopak tengah, cincin terakhir. `tutup` = porsi isi yang
+# terjangkau jejak; sisanya (sudut runcing) masuk lewat pudar isi utuh di ujung.
+JEJAK = {
+    'padma': jejak_tengah(PADMA, mulai=((PADMA['kotak'][0] + PADMA['kotak'][2]) / 2, PADMA['kotak'][1]), cincin_akhir=True),
+    'firstjet': jejak_tengah(FJ, mulai=(FJ['kotak'][0], FJ['kotak'][1])),
+}
+for nama, J in JEJAK.items():
+    assert J['tutup'] > 0.97, (nama, J['tutup'])
+
 
 # TEBAL GARIS DALAM SATUAN viewBox (2026-09-25): logo 352 -> 248 px membuat garis
 # .8 jadi 0,8 px layar dan titik laser ikut mengecil -- di PC (1 piksel fisik per
@@ -39,14 +55,20 @@ assert PADMA['kotak'][0] + GESER > VB[0] and FJ['kotak'][2] < VB[0] + VB[2], (PA
 # -> 1.35 (di bawah ~1,3 px layar garis tipis tergambar abu-abu/lembut), titik
 # 1.56 -> 1.2 (sebesar garisnya, bukan gumpalan), halo 2.6 -> 1.8 dan jauh lebih
 # redup (lihat .halo + opasitasnya di langkah()).
-def logo_svg(kelas, L, isi):
-    gores = ''.join('<path class="gores" d="%s"/>' % d for d in L['gores'])
+# Opsi A (malam yang sama): goresan .gores kini PENGHUNI MASK -- putih, selebar
+# pita yang dilaluinya (lebar per goresan dari jejak_tengah), ujung bulat -- dan
+# yang terlihat hanya .isi (logo asli) di bawah mask itu. .penuh = isi utuh,
+# pudar masuk di ujung ukiran. Titik laser tetap (r 1.2, halo 1.8).
+def logo_svg(kelas, L, isi, J):
+    gores = ''.join('<path class="gores" d="%s" stroke-width="%.2f"%s/>' % (j['d'], j['w'], ' stroke-linecap="square"' if j['siku'] else '')
+                    for j in J['jejak'])
     return ('<g class="%s">'
-            '<clipPath id="arsir-%s"><rect class="tirai" x="-200" y="-70" width="400" height="0"/></clipPath>'
-            '<path class="isi" fill="%s" fill-rule="evenodd" clip-path="url(#arsir-%s)" d="%s"/>'
-            '<g class="tepi" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round" stroke-linecap="round" opacity="0">%s</g>'
+            '<mask id="buka-%s" maskUnits="userSpaceOnUse" x="-200" y="-100" width="400" height="200">'
+            '<g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round">%s</g></mask>'
+            '<path class="isi" fill="%s" fill-rule="evenodd" mask="url(#buka-%s)" d="%s"/>'
+            '<path class="penuh" fill="%s" fill-rule="evenodd" opacity="0" d="%s"/>'
             '<circle class="halo" r="1.8" fill="currentColor" opacity="0"/><circle class="titik" r="1.2" fill="currentColor" opacity="0"/>'
-            '</g>') % (kelas, kelas, isi, kelas, L['isi'], gores)
+            '</g>') % (kelas, kelas, gores, isi, kelas, L['isi'], isi, L['isi'])
 
 
 # Diukir putih polos ("putih aja, jangan abu") dan TETAP putih sampai dashboard
@@ -64,8 +86,8 @@ ikon_tab = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="%.1f %.1f %.1f %.1
             '<stop offset="0" class="t"/><stop offset=".5" class="m"/><stop offset="1" class="g"/></radialGradient></defs>'
             '<path fill="url(#p)" fill-rule="evenodd" d="%s"/></svg>\n' % PADMA['isi'])
 svg = ('<svg id="laser" viewBox="%d %d %d %d" aria-hidden="true">' % VB
-       + '<g transform="translate(%s 0)">' % GESER + logo_svg('padma', PADMA, 'currentColor') + '</g>'
-       + logo_svg('firstjet', FJ, 'currentColor')
+       + '<g transform="translate(%s 0)">' % GESER + logo_svg('padma', PADMA, 'currentColor', JEJAK['padma']) + '</g>'
+       + logo_svg('firstjet', FJ, 'currentColor', JEJAK['firstjet'])
        + '</svg>')
 # UKURAN = SPLASH ANDROID (2026-09-25, "ukuran logo padma di awal loading
 # disamain dengan logo pas animasi laser"). Splash Android 12+ menggambar ikon
@@ -126,8 +148,6 @@ POLA_SVG = ('<svg class="pola-isi pola-dasar"><defs>'
             '<pattern id="ubin" patternUnits="userSpaceOnUse" width="%d" height="%d" x="-40" y="-10">' % (W, H)
             + gambar_pola()
             + '</pattern></defs><rect width="100%" height="100%" fill="url(#ubin)"/></svg>')
-DATA_LASER = json.dumps({
-                         'baris': [PADMA['baris'], FJ['baris']]}, separators=(',', ':'))
 
 EXEC = 'https://script.google.com/macros/s/AKfycbzBRPeuPWoL3UdErFpn9WngpqQNiqvf9zH0dOhAsNEGlI1s9Uhm0XIGkWwalLctpwwR/exec'
 TERANG_BILAH, GELAP_BILAH = '#FFFFFF', '#16181C'
@@ -586,40 +606,35 @@ html = '''<!DOCTYPE html>
     });
   }
 
-  /* Laser, SEKALI (2026-09-24): Padma dan FirstJet diukir bersamaan, satu
-     titik laser per logo (garis tepi 9 dtk, lalu isi diarsir 5 dtk -- dulu 2,6 +
-     1,3 lalu 5 + 3 dtk, pemilik dua kali: "kecepetan"); sesudah itu diam sampai
-     "siap". Luncur antar-goresan 0,35 x
-     jarak dengan titik mati, seperti agLaserMulai_ di Index.html. */
-  var D = ''' + DATA_LASER + ''';
+  /* LASER MEMBUKA LOGO (2026-09-25 malam, opsi A -- pemilik: "A go go go").
+     Satu titik laser per logo berjalan di GARIS TENGAH tiap bagiannya
+     (jejak_tengah.py); goresan mask selebar pitanya membuka isi logo yang ASLI
+     di belakang titik itu -- tajam sejak bingkai pertama, bingkai terakhirnya
+     logo itu sendiri. Dulu: garis tepi dua sisi per pita (kabur di awal) lalu
+     arsir. Padma + FirstJet bersamaan, cincin Padma terakhir; luncur antar-
+     goresan 0,35 x jarak dengan titik mati. Isi utuh memudar masuk PUDAR_MS di
+     ujung, supaya sudut runcing yang tak terjangkau jejak (~1-2%) tampil tanpa
+     lompatan. lihat docs/ui/boot-dan-runtime.md § Laser membuka logo */
   var svg = document.getElementById('laser');
+  var UKIR_MS = 8500, PUDAR_MS = 300, AKHIR = UKIR_MS + PUDAR_MS;
   var JADWAL = [  // ms sejak halaman dibuka
-    /* 9000/5000 -> 6000/3500 (2026-09-25, "kecepatan marking juga dipercepat
-       saja"). Riwayat: 5000/3000 "ngebut sekali", 9000/5000 "masih kecepetan"
-       sebelumnya -- ini di antaranya, ~30% lebih cepat dari 9000/5000. */
-    /* 6000/3500 -> 8000/4500 (2026-09-25 malam, "make the laser animation
-       slower"): di antara 6000/3500 dan 9000/5000 ("masih kecepetan" dulu). */
-    { tepi: [0, 8000], arsir: [8000, 12500], logo: svg.querySelector('.padma') },
-    { tepi: [0, 8000], arsir: [8000, 12500], logo: svg.querySelector('.firstjet') }
+    { buka: [0, UKIR_MS], logo: svg.querySelector('.padma') },
+    { buka: [0, UKIR_MS], logo: svg.querySelector('.firstjet') }
   ];
-  var PUDAR_MS = 400, AKHIR = 12500 + PUDAR_MS;
-  JADWAL.forEach(function (J, n) {
+  JADWAL.forEach(function (J) {
     J.gores = Array.prototype.slice.call(J.logo.querySelectorAll('.gores'));
-    J.tirai = J.logo.querySelector('.tirai');
-    J.baris = D.baris[n];
-    /* pathLength=1: dash dinormalkan peramban sendiri. getTotalLength dan panjang
-       yang digambar tidak persis sama -> tanpa ini potongan garis FirstJet sudah
-       tampil sebelum gilirannya (terlihat di pratinjau). */
-    J.tepiG = J.logo.querySelector('.tepi');
+    J.penuh = J.logo.querySelector('.penuh');
     J.titik = [J.logo.querySelector('.titik'), J.logo.querySelector('.halo')];
+    /* pathLength=1: dash dinormalkan peramban sendiri. getTotalLength dan panjang
+       yang digambar tidak persis sama -> tanpa ini potongan goresan sudah
+       tampil sebelum gilirannya (terlihat di pratinjau, masih berlaku di mask). */
     J.pj = J.gores.map(function (g) {
       g.setAttribute('pathLength', 1); g.style.strokeDasharray = '1 2'; g.style.strokeDashoffset = 1;
       return g.getTotalLength();
     });
     /* Tabel titik tiap 0,8 satuan, dihitung SEKALI. Dulu getPointAtLength
-       dipanggil tiap frame pada path ribuan huruf -- ikut membuat laser
-       "kadang patah" di HP, bersama dashboard yang sedang dimuat di utas yang
-       sama (iframe lintas situs di Chrome Android sering satu proses). */
+       dipanggil tiap frame -- ikut membuat laser "kadang patah" di HP, bersama
+       dashboard yang sedang dimuat di utas yang sama. */
     J.tabel = J.gores.map(function (g, i) {
       var n = Math.max(2, Math.ceil(J.pj[i] / 0.8)), t = new Float32Array(2 * (n + 1));
       for (var k = 0; k <= n; k++) { var q = g.getPointAtLength(J.pj[i] * k / n); t[2 * k] = q.x; t[2 * k + 1] = q.y; }
@@ -629,19 +644,13 @@ html = '''<!DOCTYPE html>
     J.ruas = []; J.total = 0;
     J.gores.forEach(function (g, i) {
       if (i > 0) {
-        // kontur tertutup: ujung goresan sebelumnya = titik awalnya
-        var a = J.gores[i - 1].getPointAtLength(0), b = g.getPointAtLength(0);
+        // ujung goresan sebelumnya -> awal goresan ini (garis tengah bisa terbuka)
+        var a = J.gores[i - 1].getPointAtLength(J.pj[i - 1]), b = g.getPointAtLength(0);
         var d = Math.hypot(b.x - a.x, b.y - a.y);
         if (d > 0.5) { J.ruas.push({ luncur: true, L: d * 0.35 }); J.total += d * 0.35; }
       }
       J.ruas.push({ luncur: false, i: i, L: J.pj[i] }); J.total += J.pj[i];
     });
-    /* Arsiran: panjang sapuan tiap baris = jumlah rentang terisi; baris genap
-       kiri->kanan, ganjil kanan->kiri, loncat antar-rentang dengan laser mati. */
-    J.sapu = J.baris.map(function (b) { return b[1].reduce(function (t, r) { return t + (r[1] - r[0]); }, 0); });
-    J.sapuTotal = J.sapu.reduce(function (t, x) { return t + x; }, 0);
-    J.atas = J.baris[0][0] - 3;
-    J.tirai.setAttribute('y', J.atas);
   });
   function mulus(x) { return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
   function jalur(dt, r) { return Math.max(0, Math.min(1, (dt - r[0]) / (r[1] - r[0]))); }
@@ -664,26 +673,6 @@ html = '''<!DOCTYPE html>
     });
     return pos;
   }
-  function arsir(J, p) {
-    var sisa = J.sapuTotal * p, n = J.baris.length;
-    for (var i = 0; i < n; i++) {
-      if (sisa > J.sapu[i] && i < n - 1) { sisa -= J.sapu[i]; continue; }
-      var y = J.baris[i][0], rent = J.baris[i][1], pos = null;
-      if (i % 2) rent = rent.map(function (r) { return [r[1], r[0]]; }).reverse();
-      var maju = Math.min(sisa, J.sapu[i]);
-      for (var k = 0; k < rent.length; k++) {
-        var L = Math.abs(rent[k][1] - rent[k][0]);
-        if (maju <= L) { pos = { x: rent[k][0] + (rent[k][1] > rent[k][0] ? maju : -maju), y: y }; break; }
-        maju -= L;
-      }
-      // isi terbuka sampai baris yang sedang disapu; selesai = terbuka semua
-      // (p = 0: tertutup total -- tanpa ini 3 satuan teratas isi sudah tampil
-      // sejak awal, terlihat sebagai garis putus-putus di atas FIRSTJET)
-      J.tirai.setAttribute('height', p <= 0 ? 0 : Math.max(0, (p >= 1 ? y + 60 : y) - J.atas));
-      return p > 0 && p < 1 ? pos : null;
-    }
-    return null;
-  }
   /* Diputar rAF (selaras layar; setTimeout 30 ms dulu patah-patah), setTimeout
      100 ms cadangan kalau rAF tidak datang (tab di latar). */
   function berikut(fn) {
@@ -697,10 +686,9 @@ html = '''<!DOCTYPE html>
     var dt = waktu();
     var redup = Math.max(0, Math.min(1, (4 - lajuKini()) / 3));   // 1x -> penuh, >= 4x -> hilang
     JADWAL.forEach(function (J) {
-      var pt = jalur(dt, J.tepi);
-      var pt2 = tepi(J, pt), pos = arsir(J, jalur(dt, J.arsir)) || pt2;  // dua-duanya selalu dijalankan (tirai)
-      // garis tepi: tak tampil sebelum gilirannya, pudar 400 ms sesudah isi penuh
-      J.tepiG.style.opacity = pt > 0 ? 1 - jalur(dt, [J.arsir[1], J.arsir[1] + PUDAR_MS]) : 0;
+      var pos = tepi(J, jalur(dt, J.buka));
+      // isi utuh memudar masuk di ujung ukiran (sudut yang tak terjangkau jejak)
+      J.penuh.setAttribute('opacity', jalur(dt, [J.buka[1], AKHIR]));
       J.titik.forEach(function (c, i) {
         if (pos && redup > 0) { c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y); c.setAttribute('opacity', (i ? 0.28 : 1) * redup); }
         else c.setAttribute('opacity', 0);
