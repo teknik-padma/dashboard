@@ -29,13 +29,17 @@ VB = (-124, -64, 248, 128)
 assert PADMA['kotak'][0] + GESER > VB[0] and FJ['kotak'][2] < VB[0] + VB[2], (PADMA['kotak'], FJ['kotak'])
 
 
+# TEBAL GARIS DALAM SATUAN viewBox (2026-09-25): logo 352 -> 248 px membuat garis
+# .8 jadi 0,8 px layar dan titik laser ikut mengecil -- di PC (1 piksel fisik per
+# px) garis < 1 px tergambar kasar/putus (dilaporkan "di layar pc saya jelek di hp
+# bagus"). Dikali 352/248: garis 1.14, titik 1.56, halo 4.5 = tebal layar lama.
 def logo_svg(kelas, L, isi):
     gores = ''.join('<path class="gores" d="%s"/>' % d for d in L['gores'])
     return ('<g class="%s">'
             '<clipPath id="arsir-%s"><rect class="tirai" x="-200" y="-70" width="400" height="0"/></clipPath>'
             '<path class="isi" fill="%s" fill-rule="evenodd" clip-path="url(#arsir-%s)" d="%s"/>'
-            '<g class="tepi" fill="none" stroke="currentColor" stroke-width=".8" stroke-linejoin="round" opacity="0">%s</g>'
-            '<circle class="halo" r="3.2" fill="currentColor" opacity="0"/><circle class="titik" r="1.1" fill="currentColor" opacity="0"/>'
+            '<g class="tepi" fill="none" stroke="currentColor" stroke-width="1.14" stroke-linejoin="round" opacity="0">%s</g>'
+            '<circle class="halo" r="4.5" fill="currentColor" opacity="0"/><circle class="titik" r="1.56" fill="currentColor" opacity="0"/>'
             '</g>') % (kelas, kelas, isi, kelas, L['isi'], gores)
 
 
@@ -224,6 +228,16 @@ html = '''<!DOCTYPE html>
   /* POLA LOGO CUSTOMER (2026-09-25): siluet putih samar, diam; kilau menyapu
      = salinan pola yang sama, lebih terang, di dalam pita yang lewat. */
   #laser, .putus { position: relative; z-index: 1; }
+  /* "by Padma Group" DI KAKI LAYAR MUAT (2026-09-25, contoh splash Instagram
+     "from Meta"). Splash sistem Android tidak bisa diberi tulisan (aplikasi web),
+     jadi tulisannya di sini. Gradien menutup pola logo customer di belakangnya. */
+  .oleh {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; text-align: center;
+    color: var(--muat-isi); padding: 48px 16px calc(env(safe-area-inset-bottom, 0px) + 36px);
+    background: linear-gradient(to bottom, transparent, var(--muat-latar) 55%);
+    font: 600 15px/1.3 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: .2px;
+  }
+  .oleh span { display: block; font-size: 12px; opacity: .55; margin-bottom: 2px; letter-spacing: .4px; }
   .pola { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: .5;
     -webkit-mask-image: radial-gradient(ellipse 62% 40% at 50% 47%, transparent 30%, #000 78%);
             mask-image: radial-gradient(ellipse 62% 40% at 50% 47%, transparent 30%, #000 78%); }
@@ -284,6 +298,7 @@ html = '''<!DOCTYPE html>
 <div id="muat" role="status" aria-label="Memuat Padma Group">
 <div class="pola" aria-hidden="true"><div class="pola-putar">''' + POLA_SVG + '''<div class="kilau-pita"><div class="kilau-isi"><svg class="pola-isi"><rect width="100%" height="100%" fill="url(#ubin)"/></svg></div></div></div></div>
 ''' + svg + '''
+<div class="oleh" aria-hidden="true"><span>by</span>Padma Group</div>
 <div class="putus">Tidak ada koneksi internet. Dashboard terbuka otomatis begitu tersambung.</div>
 </div>
 <div id="kamera" role="dialog" aria-label="Scan QR Mesin">

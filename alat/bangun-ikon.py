@@ -7,7 +7,8 @@ ikon launcher APK, cincinnya cuma ~42% lebar ikon. Sekarang:
   icon-maskable-*.png  purpose "maskable" cincin 68%: zona aman Android lingkaran
                        80%, dan 80% pas di batasnya ternyata terpotong di HP
                        (dilaporkan "kepotong ujung2nya") -- disisakan ruang.
-Latar #000 (sama dengan layar muat).
+Latar #16181C (sama dengan layar muat + background_color manifest, 2026-09-25:
+dulu #000, terlihat sebagai kotak hitam di splash Android yang latarnya #16181C).
 
 WARNANYA DARI IKON LAMA, TEPINYA DARI VEKTOR (2026-09-24, dilaporkan "shadow2nya
 hilang, malah plain grey" pada versi perak radial rata): alat/ikon-lama-512.png
@@ -52,6 +53,9 @@ def subpath(d):
     return polis
 
 
+LATAR = (0x1C, 0x18, 0x16)  # BGR dari #16181C = GELAP_MUAT di bangun-pembungkus.py
+
+
 def ikon(ukuran, porsi):
     n = ukuran * SUPER
     k = PADMA['kotak']; lebar = max(k[2] - k[0], k[3] - k[1])
@@ -89,7 +93,10 @@ def ikon(ukuran, porsi):
     peta_y = (254.5 + rs * np.sin(sud)).astype(np.float32)
     polar = cv2.remap(LAMA, peta_x, peta_y, cv2.INTER_LINEAR)
     kanvas = np.where(cincin[..., None], polar, kanvas)
-    rgb = kanvas * (masker[..., None] / 255.0)
+    # latar LATAR, bukan nol: splash Android menggambar ikon ini di atas
+    # background_color manifest, jadi keduanya harus sama supaya kotaknya menyatu.
+    a = masker[..., None] / 255.0
+    rgb = kanvas * a + np.array(LATAR, np.float32) * (1 - a)
     kecil = cv2.resize(rgb.astype(np.float32), (ukuran, ukuran), interpolation=cv2.INTER_AREA)
     return np.clip(np.round(kecil), 0, 255).astype(np.uint8)
 
@@ -99,5 +106,11 @@ for uk in (192, 512):
     # padma logo pinggir2nya masih kayak kepotong ... kecilin aja logonya" --
     # splash Android memotong ke lingkaran tengah, di luar kendali manifest.
     cv2.imwrite(os.path.join(OUT, 'icon-%d.png' % uk), ikon(uk, 0.72))
-    cv2.imwrite(os.path.join(OUT, 'icon-maskable-%d.png' % uk), ikon(uk, 0.58))
+    # 0.58 -> 0.34 (2026-09-25, "ukuran logo padma diperkecil se ukuran ig", contoh
+    # splash Instagram): cincin di splash Android ~58% dari sebelumnya, kira-kira
+    # sama dengan logo laser sesudahnya. Harganya: ikon SAMA dipakai launcher, jadi
+    # logo di layar utama ikut kecil (pemilik memilihnya).
+    # 0.34 -> 0.46 (sama hari, "logo shortcut aplikasinya bisa dibuat gede ga sih?"):
+    # ikon launcher = ikon splash Android 12+, jadi dipilih tengah-tengah (pemilik).
+    cv2.imwrite(os.path.join(OUT, 'icon-maskable-%d.png' % uk), ikon(uk, 0.46))
 print('ok')
