@@ -63,7 +63,11 @@ svg = ('<svg id="laser" viewBox="%d %d %d %d" aria-hidden="true">' % VB
 # terukur) -> ~142 px. Cincin di sini 100 dari 248 satuan, jadi kotaknya
 # 142 x 248 / 100 = 352 px; dulu 320 px (~129 px, 12% lebih kecil). Dibatasi
 # 94vw: HP 360 px jadi ~136 px, FirstJet tetap ~16 px dari tepi.
-LEBAR_PX, LEBAR_VW = 352, 94
+# DIKECILKAN KE 70% (2026-09-25, "logo splash menurut saya terlalu besar"):
+# 248 px (cincin ~100 px), 66vw. Harganya: logo laser kini lebih kecil dari ikon
+# splash Android yang tampil sesaat sebelumnya di PWA terpasang (ukuran itu
+# milik Android, tidak bisa diatur) -- kesamaan ukuran di atas sengaja dilepas.
+LEBAR_PX, LEBAR_VW = 248, 66
 
 # POLA LOGO CUSTOMER (2026-09-25, diminta "diganti logo2 customer saja yang
 # dibackground ... idle aja cuma ada cahaya jalan2"; menggantikan pola
@@ -117,6 +121,11 @@ DATA_LASER = json.dumps({
 
 EXEC = 'https://script.google.com/macros/s/AKfycbzBRPeuPWoL3UdErFpn9WngpqQNiqvf9zH0dOhAsNEGlI1s9Uhm0XIGkWwalLctpwwR/exec'
 TERANG_BILAH, GELAP_BILAH = '#FFFFFF', '#16181C'
+# LAYAR MUAT GELAP = LATAR DASHBOARD, BUKAN HITAM (2026-09-25, "bisa ga background
+# loading splash itu bukan hitam tapi gelap? (kayak yg di username)"). Yang dipakai
+# latar body dashboard terakhir di tema gelap (pesan "warna", field latar = --bg,
+# latar gerbang login juga), disimpan padmaLatarGelap; belum pernah -> ini.
+GELAP_MUAT = '#16181C'
 # Iframe TANPA COOKIE (credentialless, Chrome): obat "Maaf, saat ini tidak dapat
 # membuka file" di HP dengan beberapa akun Google (terbukti di HP pemilik lewat
 # tanpa-cookie.padmagroup.pages.dev, 2026-09-24). Sempat NYALA di situs utama
@@ -132,7 +141,7 @@ html = '''<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#000000" id="warnaBilah">
+<meta name="theme-color" content="''' + GELAP_MUAT + '''" id="warnaBilah">
 <!-- BOOT LEBIH CEPAT (2026-09-25): sambungan TLS ke Apps Script dibuka SEBELUM
      iframe-nya diurai, bukan sesudahnya. -->
 <link rel="preconnect" href="https://script.google.com">
@@ -155,12 +164,14 @@ html = '''<!DOCTYPE html>
    diberi warna layar muat dulu; warna bilah dashboard baru dipasang sesudah
    layar muat dilepas. */
 (function () {
-  var h = document.documentElement, t = null, b = null;
-  try { t = localStorage.getItem('padmaTema'); b = localStorage.getItem('padmaBawah'); } catch (e) {}
+  var h = document.documentElement, t = null, b = null, lg = null;
+  try { t = localStorage.getItem('padmaTema'); b = localStorage.getItem('padmaBawah'); lg = localStorage.getItem('padmaLatarGelap'); } catch (e) {}
+  if (lg && !/^rgba?\\([\\d.,\\s]+\\)$|^#[0-9a-f]{3,8}$/i.test(lg)) lg = null;
+  if (lg) h.style.setProperty('--muat-gelap', lg);
   if (t !== 'dark' && t !== 'light') t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   h.setAttribute('data-tema', t);
   var mb = document.getElementById('warnaBilah');
-  if (mb) mb.setAttribute('content', t === 'dark' ? '#000000' : '#ffffff');
+  if (mb) mb.setAttribute('content', t === 'dark' ? (lg || "''' + GELAP_MUAT + '''") : '#ffffff');
   if (b) h.style.setProperty('--bawah', b);
 })();
 </script>
@@ -171,7 +182,7 @@ html = '''<!DOCTYPE html>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" media="print" onload="this.media='all'">
 <style>
   :root { --bawah: ''' + TERANG_BILAH + '''; --muat-latar: #fff; --muat-isi: #000; }
-  html[data-tema="dark"] { --bawah: ''' + GELAP_BILAH + '''; --muat-latar: #000; --muat-isi: #fff; }
+  html[data-tema="dark"] { --bawah: ''' + GELAP_BILAH + '''; --muat-latar: var(--muat-gelap, ''' + GELAP_MUAT + '''); --muat-isi: #fff; }
   /* LAYAR MUAT IKUT TEMA (2026-09-25, "animasi di awal mengikuti tema? ... invert
      color yg putih"): terang = latar putih, logo + arsiran hitam; gelap = seperti
      dulu. Siluet logo customer berupa PNG putih -> dibalik di tema terang. */
@@ -295,10 +306,23 @@ html = '''<!DOCTYPE html>
   var jalan = true, siap = false, animSelesai = false, mulai = Date.now();
   /* Jam laser: normal = ms sejak dibuka; sesudah "siap" dipercepat supaya sisa
      ukiran selesai dalam SUSUL_MS (tidak dipotong, tidak ditunggu). */
-  var SUSUL_MS = 300, susul = null;  // 600 -> 300 (2026-09-25, boot lebih cepat)
+  /* PERCEPATAN MULUS (2026-09-25, "kalo naik kecepatan agak patah"): dulu laju
+     melompat dari 1x ke (sisa / SUSUL_MS) -- sampai ~38x -- dalam SATU frame, dan
+     titik laser meloncat ratusan ms ukiran per frame. Kini kurva Hermite: mulai di
+     laju 1x (turunan = 1), naik mulus, mendarat pelan tepat di AKHIR. Monoton
+     selama sisa >= SUSUL_MS / 3; sisa < SUSUL_MS tidak dipercepat sama sekali. */
+  var SUSUL_MS = 500, susul = null;  // 300 -> 500 bersama kurvanya
+  function susulU() { return Math.min(1, (Date.now() - susul.t0) / SUSUL_MS); }
   function waktu() {
-    var kini = Date.now();
-    return susul ? susul.dt0 + (kini - susul.t0) * susul.laju : kini - mulai;
+    if (!susul) return Date.now() - mulai;
+    var u = susulU();
+    return susul.dt0 + SUSUL_MS * (u * u * u - 2 * u * u + u) + susul.sisa * (3 * u * u - 2 * u * u * u);
+  }
+  /* Laju jam laser saat ini (1 = normal). Dipakai meredupkan titik laser. */
+  function lajuKini() {
+    if (!susul) return 1;
+    var u = susulU();
+    return (3 * u * u - 4 * u + 1) + susul.sisa / SUSUL_MS * (6 * u - 6 * u * u);
   }
   var TAHAN = /[?&]tahan=1/.test(location.search);
 
@@ -336,6 +360,10 @@ html = '''<!DOCTYPE html>
       h.style.setProperty('--bawah', d.bawah);
       simpan('padmaBawah', d.bawah);
       warnaBilah();
+    }
+    if (d.jenis === 'warna' && d.tema === 'dark' && typeof d.latar === 'string' && /^rgba?\\([\\d.,\\s]+\\)$|^#[0-9a-f]{3,8}$/i.test(d.latar)) {
+      h.style.setProperty('--muat-gelap', d.latar);
+      simpan('padmaLatarGelap', d.latar);
     }
     if (d.jenis === 'siap') { siap = true; siapLanjut(); }
     /* Dijawab tiap pesan tema (tiap dashboard dimuat): "ada kamera di sini".
@@ -504,7 +532,8 @@ html = '''<!DOCTYPE html>
     if (animSelesai) { lepas(); return; }
     if (susul) return;
     var dt = waktu();
-    susul = { t0: Date.now(), dt0: dt, laju: Math.max(1, (AKHIR - dt) / SUSUL_MS) };
+    if (AKHIR - dt <= SUSUL_MS) return;   // sisa sedikit: biarkan selesai di laju normal
+    susul = { t0: Date.now(), dt0: dt, sisa: AKHIR - dt };
   }
   setTimeout(lepas, 25000);
 
@@ -534,10 +563,13 @@ html = '''<!DOCTYPE html>
   var D = ''' + DATA_LASER + ''';
   var svg = document.getElementById('laser');
   var JADWAL = [  // ms sejak halaman dibuka
-    { tepi: [0, 9000], arsir: [9000, 14000], logo: svg.querySelector('.padma') },
-    { tepi: [0, 9000], arsir: [9000, 14000], logo: svg.querySelector('.firstjet') }
+    /* 9000/5000 -> 6000/3500 (2026-09-25, "kecepatan marking juga dipercepat
+       saja"). Riwayat: 5000/3000 "ngebut sekali", 9000/5000 "masih kecepetan"
+       sebelumnya -- ini di antaranya, ~30% lebih cepat dari 9000/5000. */
+    { tepi: [0, 6000], arsir: [6000, 9500], logo: svg.querySelector('.padma') },
+    { tepi: [0, 6000], arsir: [6000, 9500], logo: svg.querySelector('.firstjet') }
   ];
-  var PUDAR_MS = 400, AKHIR = 14000 + PUDAR_MS;
+  var PUDAR_MS = 400, AKHIR = 9500 + PUDAR_MS;
   JADWAL.forEach(function (J, n) {
     J.gores = Array.prototype.slice.call(J.logo.querySelectorAll('.gores'));
     J.tirai = J.logo.querySelector('.tirai');
@@ -630,13 +662,14 @@ html = '''<!DOCTYPE html>
   (function langkah() {
     if (!jalan) return;
     var dt = waktu();
+    var redup = Math.max(0, Math.min(1, (4 - lajuKini()) / 3));   // 1x -> penuh, >= 4x -> hilang
     JADWAL.forEach(function (J) {
       var pt = jalur(dt, J.tepi);
       var pt2 = tepi(J, pt), pos = arsir(J, jalur(dt, J.arsir)) || pt2;  // dua-duanya selalu dijalankan (tirai)
       // garis tepi: tak tampil sebelum gilirannya, pudar 400 ms sesudah isi penuh
       J.tepiG.style.opacity = pt > 0 ? 1 - jalur(dt, [J.arsir[1], J.arsir[1] + PUDAR_MS]) : 0;
       J.titik.forEach(function (c, i) {
-        if (pos) { c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y); c.setAttribute('opacity', i ? 0.45 : 1); }
+        if (pos && redup > 0) { c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y); c.setAttribute('opacity', (i ? 0.45 : 1) * redup); }
         else c.setAttribute('opacity', 0);
       });
     });
@@ -661,8 +694,8 @@ manifest = {
     "start_url": "./",
     "scope": "./",
     "display": "standalone",
-    "background_color": "#000000",
-    "theme_color": "#000000",
+    "background_color": GELAP_MUAT,
+    "theme_color": GELAP_MUAT,
     "lang": "id",
     "icons": [
         {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#000000" id="warnaBilah">
+<meta name="theme-color" content="#16181C" id="warnaBilah">
 <!-- BOOT LEBIH CEPAT (2026-09-25): sambungan TLS ke Apps Script dibuka SEBELUM
      iframe-nya diurai, bukan sesudahnya. -->
 <link rel="preconnect" href="https://script.google.com">
@@ -26,12 +26,14 @@
    diberi warna layar muat dulu; warna bilah dashboard baru dipasang sesudah
    layar muat dilepas. */
 (function () {
-  var h = document.documentElement, t = null, b = null;
-  try { t = localStorage.getItem('padmaTema'); b = localStorage.getItem('padmaBawah'); } catch (e) {}
+  var h = document.documentElement, t = null, b = null, lg = null;
+  try { t = localStorage.getItem('padmaTema'); b = localStorage.getItem('padmaBawah'); lg = localStorage.getItem('padmaLatarGelap'); } catch (e) {}
+  if (lg && !/^rgba?\([\d.,\s]+\)$|^#[0-9a-f]{3,8}$/i.test(lg)) lg = null;
+  if (lg) h.style.setProperty('--muat-gelap', lg);
   if (t !== 'dark' && t !== 'light') t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   h.setAttribute('data-tema', t);
   var mb = document.getElementById('warnaBilah');
-  if (mb) mb.setAttribute('content', t === 'dark' ? '#000000' : '#ffffff');
+  if (mb) mb.setAttribute('content', t === 'dark' ? (lg || "#16181C") : '#ffffff');
   if (b) h.style.setProperty('--bawah', b);
 })();
 </script>
@@ -42,7 +44,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" media="print" onload="this.media='all'">
 <style>
   :root { --bawah: #FFFFFF; --muat-latar: #fff; --muat-isi: #000; }
-  html[data-tema="dark"] { --bawah: #16181C; --muat-latar: #000; --muat-isi: #fff; }
+  html[data-tema="dark"] { --bawah: #16181C; --muat-latar: var(--muat-gelap, #16181C); --muat-isi: #fff; }
   /* LAYAR MUAT IKUT TEMA (2026-09-25, "animasi di awal mengikuti tema? ... invert
      color yg putih"): terang = latar putih, logo + arsiran hitam; gelap = seperti
      dulu. Siluet logo customer berupa PNG putih -> dibalik di tema terang. */
@@ -71,7 +73,7 @@
     transition: opacity .25s ease;
   }
   #muat.lepas { opacity: 0; pointer-events: none; }
-  #laser { width: min(352px, 94vw); height: auto; aspect-ratio: 248 / 128; overflow: visible; }
+  #laser { width: min(248px, 66vw); height: auto; aspect-ratio: 248 / 128; overflow: visible; }
   #laser .halo { filter: blur(1.4px); }
   .putus {
     margin-top: 18px; font: 600 13px/1.4 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -166,10 +168,23 @@
   var jalan = true, siap = false, animSelesai = false, mulai = Date.now();
   /* Jam laser: normal = ms sejak dibuka; sesudah "siap" dipercepat supaya sisa
      ukiran selesai dalam SUSUL_MS (tidak dipotong, tidak ditunggu). */
-  var SUSUL_MS = 300, susul = null;  // 600 -> 300 (2026-09-25, boot lebih cepat)
+  /* PERCEPATAN MULUS (2026-09-25, "kalo naik kecepatan agak patah"): dulu laju
+     melompat dari 1x ke (sisa / SUSUL_MS) -- sampai ~38x -- dalam SATU frame, dan
+     titik laser meloncat ratusan ms ukiran per frame. Kini kurva Hermite: mulai di
+     laju 1x (turunan = 1), naik mulus, mendarat pelan tepat di AKHIR. Monoton
+     selama sisa >= SUSUL_MS / 3; sisa < SUSUL_MS tidak dipercepat sama sekali. */
+  var SUSUL_MS = 500, susul = null;  // 300 -> 500 bersama kurvanya
+  function susulU() { return Math.min(1, (Date.now() - susul.t0) / SUSUL_MS); }
   function waktu() {
-    var kini = Date.now();
-    return susul ? susul.dt0 + (kini - susul.t0) * susul.laju : kini - mulai;
+    if (!susul) return Date.now() - mulai;
+    var u = susulU();
+    return susul.dt0 + SUSUL_MS * (u * u * u - 2 * u * u + u) + susul.sisa * (3 * u * u - 2 * u * u * u);
+  }
+  /* Laju jam laser saat ini (1 = normal). Dipakai meredupkan titik laser. */
+  function lajuKini() {
+    if (!susul) return 1;
+    var u = susulU();
+    return (3 * u * u - 4 * u + 1) + susul.sisa / SUSUL_MS * (6 * u - 6 * u * u);
   }
   var TAHAN = /[?&]tahan=1/.test(location.search);
 
@@ -207,6 +222,10 @@
       h.style.setProperty('--bawah', d.bawah);
       simpan('padmaBawah', d.bawah);
       warnaBilah();
+    }
+    if (d.jenis === 'warna' && d.tema === 'dark' && typeof d.latar === 'string' && /^rgba?\([\d.,\s]+\)$|^#[0-9a-f]{3,8}$/i.test(d.latar)) {
+      h.style.setProperty('--muat-gelap', d.latar);
+      simpan('padmaLatarGelap', d.latar);
     }
     if (d.jenis === 'siap') { siap = true; siapLanjut(); }
     /* Dijawab tiap pesan tema (tiap dashboard dimuat): "ada kamera di sini".
@@ -375,7 +394,8 @@
     if (animSelesai) { lepas(); return; }
     if (susul) return;
     var dt = waktu();
-    susul = { t0: Date.now(), dt0: dt, laju: Math.max(1, (AKHIR - dt) / SUSUL_MS) };
+    if (AKHIR - dt <= SUSUL_MS) return;   // sisa sedikit: biarkan selesai di laju normal
+    susul = { t0: Date.now(), dt0: dt, sisa: AKHIR - dt };
   }
   setTimeout(lepas, 25000);
 
@@ -405,10 +425,13 @@
   var D = {"baris":[[[-49.5,[[-11.5,-7.1],[-6.3,10.1],[10.4,11.7]]],[-47.2,[[-19.5,-6.2],[6.4,19.7]]],[-44.9,[[-24.4,-15.6],[15.6,24.6]]],[-42.6,[[-28.3,-21.0],[21.2,28.5]]],[-40.3,[[-31.5,-25.1],[25.3,31.7]]],[-38.0,[[-34.3,-28.5],[28.7,34.5]]],[-35.7,[[-36.7,-31.3],[31.4,36.9]]],[-33.4,[[-38.8,-33.8],[33.9,39.0]]],[-31.1,[[-40.6,-35.9],[36.1,40.8]]],[-28.8,[[-42.3,-37.8],[-0.4,2.1],[37.9,42.4]]],[-26.5,[[-43.7,-39.4],[-2.4,3.7],[39.6,43.9]]],[-24.2,[[-45.1,-41.0],[-4.1,5.0],[41.1,45.2]]],[-21.9,[[-46.2,-42.2],[-5.4,-0.5],[0.9,6.2],[42.4,46.5]]],[-19.6,[[-47.2,-43.3],[-6.5,-1.7],[2.6,7.2],[43.5,47.3]]],[-17.3,[[-48.0,-44.3],[-7.3,-2.6],[3.9,8.0],[44.4,48.1]]],[-15.0,[[-48.7,-45.2],[-7.9,-3.5],[5.0,8.6],[45.3,48.9]]],[-12.7,[[-49.2,-45.8],[-28.3,-24.0],[-8.3,-4.2],[5.8,9.1],[21.9,26.7],[46.0,49.4]]],[-10.4,[[-49.5,-46.4],[-28.4,-18.2],[-8.6,-4.8],[6.3,9.4],[17.2,26.7],[46.6,49.7]]],[-8.1,[[-49.9,-46.9],[-28.4,-14.5],[-8.9,-5.4],[6.7,9.6],[14.1,20.1],[24.5,26.7],[47.1,49.6]]],[-5.8,[[-49.7,-47.3],[-28.3,-23.9],[-19.0,-11.8],[-8.9,-5.7],[7.0,9.6],[11.6,16.6],[24.4,26.3],[47.4,49.9]]],[-3.5,[[-49.7,-47.6],[-28.0,-23.7],[-16.1,-10.0],[-8.9,-6.0],[7.1,14.2],[23.8,25.9],[47.7,49.6]]],[-1.2,[[-49.7,-47.6],[-27.6,-23.3],[-13.9,-6.1],[7.0,12.2],[23.1,25.5],[47.8,49.8]]],[1.2,[[-49.8,-47.6],[-26.9,-22.7],[-12.0,-6.0],[6.7,10.6],[22.2,24.8],[47.8,49.9]]],[3.5,[[-49.6,-47.6],[-26.0,-21.9],[-10.4,-5.9],[6.3,9.4],[21.1,23.9],[47.7,49.8]]],[5.8,[[-49.6,-47.3],[-24.8,-20.7],[-9.1,-5.6],[5.6,8.2],[19.8,22.9],[47.4,49.8]]],[8.1,[[-49.8,-47.0],[-23.2,-19.2],[-7.9,-5.3],[5.0,7.3],[18.4,21.5],[47.2,49.8]]],[10.4,[[-49.4,-46.5],[-21.2,-17.3],[-6.9,-5.0],[4.6,6.3],[16.9,19.9],[46.6,49.8]]],[12.7,[[-49.2,-45.8],[-34.3,-15.0],[-5.8,-4.9],[4.4,5.6],[15.3,18.0],[19.3,39.0],[46.0,49.4]]],[15.0,[[-48.7,-45.2],[-38.3,-28.4],[-16.4,-11.6],[4.2,4.9],[13.7,30.8],[31.8,32.1],[32.6,37.6],[45.3,48.9]]],[17.3,[[-48.0,-44.3],[-36.7,-31.9],[9.8,19.4],[31.5,35.9],[44.4,48.2]]],[19.6,[[-47.2,-43.3],[-34.6,-28.3],[5.6,13.9],[29.6,33.9],[43.5,47.4]]],[21.9,[[-46.2,-42.3],[-32.1,-23.5],[0.7,9.2],[27.2,31.5],[42.4,46.5]]],[24.2,[[-45.2,-40.9],[-29.4,-15.7],[-7.1,4.9],[23.8,28.5],[41.1,45.3]]],[26.5,[[-43.8,-39.4],[-25.9,0.1],[7.1,10.2],[16.6,24.2],[39.6,44.0]]],[28.8,[[-42.3,-37.9],[-21.0,-5.7],[38.0,42.5]]],[31.1,[[-40.7,-35.9],[36.1,40.8]]],[33.4,[[-38.8,-33.8],[33.9,39.0]]],[35.7,[[-36.7,-31.3],[31.5,36.9]]],[38.0,[[-34.3,-28.5],[28.8,34.5]]],[40.3,[[-31.6,-25.2],[25.4,31.7]]],[42.6,[[-28.4,-21.1],[21.4,28.6]]],[44.9,[[-24.5,-15.7],[15.8,24.7]]],[47.2,[[-19.7,-6.9],[7.0,19.8]]],[49.5,[[-11.3,-4.9],[-3.8,3.7],[4.5,11.5]]]],[[-49.4,[[17.6,29.6],[30.8,32.1],[33.6,45.2],[47.8,59.4],[60.8,75.1],[81.4,82.6],[84.4,96.8],[98.1,112.6]]],[-47.1,[[17.4,19.1],[30.8,32.2],[33.2,34.6],[44.7,46.2],[47.2,48.8],[67.3,68.6],[81.3,82.6],[83.8,85.3],[104.6,106.1]]],[-44.8,[[17.4,19.0],[30.8,32.2],[33.2,44.9],[58.2,59.7],[67.2,68.6],[81.3,82.6],[83.8,85.3],[104.6,106.1]]],[-42.5,[[17.5,18.9],[30.8,32.2],[33.3,34.6],[44.5,45.8],[47.4,58.8],[67.3,68.6],[72.1,81.8],[84.6,96.9],[104.6,106.1]]],[-40.2,[]],[-37.9,[]],[-35.6,[]],[-33.3,[]],[-31.0,[]],[-28.7,[]],[-26.4,[[40.3,107.0]]],[-24.1,[[39.5,106.3]]],[-21.8,[[38.7,105.6]]],[-19.5,[[37.8,104.9]]],[-17.2,[[37.1,104.3]]],[-14.9,[[36.3,103.5]]],[-12.6,[[35.4,102.9]]],[-10.3,[]],[-8.0,[]],[-5.7,[]],[-3.4,[]],[-1.1,[]],[1.1,[[17.8,31.3],[48.9,98.7]]],[3.4,[[18.7,30.4],[48.1,98.1]]],[5.7,[[19.8,29.4],[47.3,97.4]]],[8.0,[[20.9,28.4],[46.5,96.6]]],[10.3,[[22.0,27.4],[45.7,95.8]]],[12.6,[[23.0,26.4],[45.0,95.0]]],[14.9,[[24.2,25.3],[44.2,94.2]]],[17.2,[[43.4,63.6]]],[19.5,[[42.7,62.4]]],[21.8,[[41.8,61.4]]],[24.1,[[41.1,60.4]]],[26.4,[[40.3,59.5]]],[28.7,[[39.5,58.5]]],[31.0,[[38.7,57.5]]],[33.3,[[37.9,56.6]]],[35.6,[[37.2,55.6]]],[37.9,[[36.5,54.6]]],[40.2,[[35.6,53.6]]],[42.5,[[34.9,52.6]]],[44.8,[[34.1,51.8]]],[47.1,[[33.4,50.7]]],[49.4,[[32.6,49.7]]]]]};
   var svg = document.getElementById('laser');
   var JADWAL = [  // ms sejak halaman dibuka
-    { tepi: [0, 9000], arsir: [9000, 14000], logo: svg.querySelector('.padma') },
-    { tepi: [0, 9000], arsir: [9000, 14000], logo: svg.querySelector('.firstjet') }
+    /* 9000/5000 -> 6000/3500 (2026-09-25, "kecepatan marking juga dipercepat
+       saja"). Riwayat: 5000/3000 "ngebut sekali", 9000/5000 "masih kecepetan"
+       sebelumnya -- ini di antaranya, ~30% lebih cepat dari 9000/5000. */
+    { tepi: [0, 6000], arsir: [6000, 9500], logo: svg.querySelector('.padma') },
+    { tepi: [0, 6000], arsir: [6000, 9500], logo: svg.querySelector('.firstjet') }
   ];
-  var PUDAR_MS = 400, AKHIR = 14000 + PUDAR_MS;
+  var PUDAR_MS = 400, AKHIR = 9500 + PUDAR_MS;
   JADWAL.forEach(function (J, n) {
     J.gores = Array.prototype.slice.call(J.logo.querySelectorAll('.gores'));
     J.tirai = J.logo.querySelector('.tirai');
@@ -501,13 +524,14 @@
   (function langkah() {
     if (!jalan) return;
     var dt = waktu();
+    var redup = Math.max(0, Math.min(1, (4 - lajuKini()) / 3));   // 1x -> penuh, >= 4x -> hilang
     JADWAL.forEach(function (J) {
       var pt = jalur(dt, J.tepi);
       var pt2 = tepi(J, pt), pos = arsir(J, jalur(dt, J.arsir)) || pt2;  // dua-duanya selalu dijalankan (tirai)
       // garis tepi: tak tampil sebelum gilirannya, pudar 400 ms sesudah isi penuh
       J.tepiG.style.opacity = pt > 0 ? 1 - jalur(dt, [J.arsir[1], J.arsir[1] + PUDAR_MS]) : 0;
       J.titik.forEach(function (c, i) {
-        if (pos) { c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y); c.setAttribute('opacity', i ? 0.45 : 1); }
+        if (pos && redup > 0) { c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y); c.setAttribute('opacity', (i ? 0.45 : 1) * redup); }
         else c.setAttribute('opacity', 0);
       });
     });
