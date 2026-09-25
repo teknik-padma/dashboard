@@ -139,7 +139,8 @@ GELAP_MUAT = '#16181C'
 # SPLASH ANDROID HITAM (2026-09-25 malam, "logo ... plain white and make it black"):
 # background_color manifest = latar ikon (bangun-ikon.py LATAR), BUKAN GELAP_MUAT --
 # kalau berbeda, kotak ikon terlihat di splash. Layar muat laser tetap GELAP_MUAT.
-SPLASH_LATAR = '#000000'
+# #000 -> #101010 (malam yang sama, "just use padmanotes splash and logo").
+SPLASH_LATAR = '#101010'
 # Iframe TANPA COOKIE (credentialless, Chrome): obat "Maaf, saat ini tidak dapat
 # membuka file" di HP dengan beberapa akun Google (terbukti di HP pemilik lewat
 # tanpa-cookie.padmagroup.pages.dev, 2026-09-24). Sempat NYALA di situs utama
