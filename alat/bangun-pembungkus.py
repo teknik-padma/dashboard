@@ -39,7 +39,7 @@ def logo_svg(kelas, L, isi):
             '<clipPath id="arsir-%s"><rect class="tirai" x="-200" y="-70" width="400" height="0"/></clipPath>'
             '<path class="isi" fill="%s" fill-rule="evenodd" clip-path="url(#arsir-%s)" d="%s"/>'
             '<g class="tepi" fill="none" stroke="currentColor" stroke-width="1.14" stroke-linejoin="round" opacity="0">%s</g>'
-            '<circle class="halo" r="4.5" fill="currentColor" opacity="0"/><circle class="titik" r="1.56" fill="currentColor" opacity="0"/>'
+            '<circle class="halo" r="2.6" fill="currentColor" opacity="0"/><circle class="titik" r="1.56" fill="currentColor" opacity="0"/>'
             '</g>') % (kelas, kelas, isi, kelas, L['isi'], gores)
 
 
@@ -130,6 +130,10 @@ TERANG_BILAH, GELAP_BILAH = '#FFFFFF', '#16181C'
 # latar body dashboard terakhir di tema gelap (pesan "warna", field latar = --bg,
 # latar gerbang login juga), disimpan padmaLatarGelap; belum pernah -> ini.
 GELAP_MUAT = '#16181C'
+# SPLASH ANDROID HITAM (2026-09-25 malam, "logo ... plain white and make it black"):
+# background_color manifest = latar ikon (bangun-ikon.py LATAR), BUKAN GELAP_MUAT --
+# kalau berbeda, kotak ikon terlihat di splash. Layar muat laser tetap GELAP_MUAT.
+SPLASH_LATAR = '#000000'
 # Iframe TANPA COOKIE (credentialless, Chrome): obat "Maaf, saat ini tidak dapat
 # membuka file" di HP dengan beberapa akun Google (terbukti di HP pemilik lewat
 # tanpa-cookie.padmagroup.pages.dev, 2026-09-24). Sempat NYALA di situs utama
@@ -212,11 +216,15 @@ html = '''<!DOCTYPE html>
   #muat {
     position: fixed; inset: 0; z-index: 2; background: var(--muat-latar); color: var(--muat-isi);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    transition: opacity .25s ease;
+    /* .25 -> .6s (2026-09-25 malam, "the transition smoother"). */
+    transition: opacity .6s ease;
   }
   #muat.lepas { opacity: 0; pointer-events: none; }
   #laser { width: min(''' + str(LEBAR_PX) + '''px, ''' + str(LEBAR_VW) + '''vw); height: auto; aspect-ratio: ''' + '%d / %d' % (VB[2], VB[3]) + '''; overflow: visible; }
-  #laser .halo { filter: blur(1.4px); }
+  /* Halo MERAPAT ke titik (2026-09-25 malam, "make the glow closer to laser"):
+     r 4.5 -> 2.6, blur 1.4 -> .9, terang .45 -> .6 -- cahaya menempel di titik,
+     bukan kabut lebar di sekitarnya. */
+  #laser .halo { filter: blur(.9px); }
   .putus {
     margin-top: 18px; font: 600 13px/1.4 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     opacity: .7; display: none;
@@ -326,7 +334,7 @@ html = '''<!DOCTYPE html>
      titik laser meloncat ratusan ms ukiran per frame. Kini kurva Hermite: mulai di
      laju 1x (turunan = 1), naik mulus, mendarat pelan tepat di AKHIR. Monoton
      selama sisa >= SUSUL_MS / 3; sisa < SUSUL_MS tidak dipercepat sama sekali. */
-  var SUSUL_MS = 500, susul = null;  // 300 -> 500 bersama kurvanya
+  var SUSUL_MS = 800, susul = null;  // 300 -> 500 bersama kurvanya; 800 (2026-09-25 malam, "transition smoother")
   function susulU() { return Math.min(1, (Date.now() - susul.t0) / SUSUL_MS); }
   function waktu() {
     if (!susul) return Date.now() - mulai;
@@ -581,10 +589,12 @@ html = '''<!DOCTYPE html>
     /* 9000/5000 -> 6000/3500 (2026-09-25, "kecepatan marking juga dipercepat
        saja"). Riwayat: 5000/3000 "ngebut sekali", 9000/5000 "masih kecepetan"
        sebelumnya -- ini di antaranya, ~30% lebih cepat dari 9000/5000. */
-    { tepi: [0, 6000], arsir: [6000, 9500], logo: svg.querySelector('.padma') },
-    { tepi: [0, 6000], arsir: [6000, 9500], logo: svg.querySelector('.firstjet') }
+    /* 6000/3500 -> 8000/4500 (2026-09-25 malam, "make the laser animation
+       slower"): di antara 6000/3500 dan 9000/5000 ("masih kecepetan" dulu). */
+    { tepi: [0, 8000], arsir: [8000, 12500], logo: svg.querySelector('.padma') },
+    { tepi: [0, 8000], arsir: [8000, 12500], logo: svg.querySelector('.firstjet') }
   ];
-  var PUDAR_MS = 400, AKHIR = 9500 + PUDAR_MS;
+  var PUDAR_MS = 400, AKHIR = 12500 + PUDAR_MS;
   JADWAL.forEach(function (J, n) {
     J.gores = Array.prototype.slice.call(J.logo.querySelectorAll('.gores'));
     J.tirai = J.logo.querySelector('.tirai');
@@ -684,7 +694,7 @@ html = '''<!DOCTYPE html>
       // garis tepi: tak tampil sebelum gilirannya, pudar 400 ms sesudah isi penuh
       J.tepiG.style.opacity = pt > 0 ? 1 - jalur(dt, [J.arsir[1], J.arsir[1] + PUDAR_MS]) : 0;
       J.titik.forEach(function (c, i) {
-        if (pos && redup > 0) { c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y); c.setAttribute('opacity', (i ? 0.45 : 1) * redup); }
+        if (pos && redup > 0) { c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y); c.setAttribute('opacity', (i ? 0.6 : 1) * redup); }
         else c.setAttribute('opacity', 0);
       });
     });
@@ -709,7 +719,7 @@ manifest = {
     "start_url": "./",
     "scope": "./",
     "display": "standalone",
-    "background_color": GELAP_MUAT,
+    "background_color": SPLASH_LATAR,
     "theme_color": GELAP_MUAT,
     "lang": "id",
     "icons": [
