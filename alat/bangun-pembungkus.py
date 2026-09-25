@@ -33,13 +33,19 @@ assert PADMA['kotak'][0] + GESER > VB[0] and FJ['kotak'][2] < VB[0] + VB[2], (PA
 # .8 jadi 0,8 px layar dan titik laser ikut mengecil -- di PC (1 piksel fisik per
 # px) garis < 1 px tergambar kasar/putus (dilaporkan "di layar pc saya jelek di hp
 # bagus"). Dikali 352/248: garis 1.14, titik 1.56, halo 4.5 = tebal layar lama.
+# 2026-09-25 malam (pemilik: "its blurry and the edge isnt connected. the glow is
+# too much (the laser dot)"): ujung garis BULAT (goresan terpisah berujung butt
+# meninggalkan takik di tiap sambungan -- terlihat di puncak cincin), garis 1.14
+# -> 1.35 (di bawah ~1,3 px layar garis tipis tergambar abu-abu/lembut), titik
+# 1.56 -> 1.2 (sebesar garisnya, bukan gumpalan), halo 2.6 -> 1.8 dan jauh lebih
+# redup (lihat .halo + opasitasnya di langkah()).
 def logo_svg(kelas, L, isi):
     gores = ''.join('<path class="gores" d="%s"/>' % d for d in L['gores'])
     return ('<g class="%s">'
             '<clipPath id="arsir-%s"><rect class="tirai" x="-200" y="-70" width="400" height="0"/></clipPath>'
             '<path class="isi" fill="%s" fill-rule="evenodd" clip-path="url(#arsir-%s)" d="%s"/>'
-            '<g class="tepi" fill="none" stroke="currentColor" stroke-width="1.14" stroke-linejoin="round" opacity="0">%s</g>'
-            '<circle class="halo" r="2.6" fill="currentColor" opacity="0"/><circle class="titik" r="1.56" fill="currentColor" opacity="0"/>'
+            '<g class="tepi" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round" stroke-linecap="round" opacity="0">%s</g>'
+            '<circle class="halo" r="1.8" fill="currentColor" opacity="0"/><circle class="titik" r="1.2" fill="currentColor" opacity="0"/>'
             '</g>') % (kelas, kelas, isi, kelas, L['isi'], gores)
 
 
@@ -222,9 +228,10 @@ html = '''<!DOCTYPE html>
   #muat.lepas { opacity: 0; pointer-events: none; }
   #laser { width: min(''' + str(LEBAR_PX) + '''px, ''' + str(LEBAR_VW) + '''vw); height: auto; aspect-ratio: ''' + '%d / %d' % (VB[2], VB[3]) + '''; overflow: visible; }
   /* Halo MERAPAT ke titik (2026-09-25 malam, "make the glow closer to laser"):
-     r 4.5 -> 2.6, blur 1.4 -> .9, terang .45 -> .6 -- cahaya menempel di titik,
-     bukan kabut lebar di sekitarnya. */
-  #laser .halo { filter: blur(.9px); }
+     r 4.5 -> 2.6 -> 1.8, blur 1.4 -> .9 -> .5, terang .45 -> .6 -> .28 (malam yang
+     sama, "the glow is too much") -- cahaya tipis menempel di titik. */
+  #laser .halo { filter: blur(.5px); }
+  #laser { shape-rendering: geometricPrecision; }
   .putus {
     margin-top: 18px; font: 600 13px/1.4 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     opacity: .7; display: none;
@@ -694,7 +701,7 @@ html = '''<!DOCTYPE html>
       // garis tepi: tak tampil sebelum gilirannya, pudar 400 ms sesudah isi penuh
       J.tepiG.style.opacity = pt > 0 ? 1 - jalur(dt, [J.arsir[1], J.arsir[1] + PUDAR_MS]) : 0;
       J.titik.forEach(function (c, i) {
-        if (pos && redup > 0) { c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y); c.setAttribute('opacity', (i ? 0.6 : 1) * redup); }
+        if (pos && redup > 0) { c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y); c.setAttribute('opacity', (i ? 0.28 : 1) * redup); }
         else c.setAttribute('opacity', 0);
       });
     });
