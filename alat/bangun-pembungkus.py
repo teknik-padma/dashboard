@@ -35,7 +35,7 @@ def logo_svg(kelas, L, isi):
             '<clipPath id="arsir-%s"><rect class="tirai" x="-200" y="-70" width="400" height="0"/></clipPath>'
             '<path class="isi" fill="%s" fill-rule="evenodd" clip-path="url(#arsir-%s)" d="%s"/>'
             '<g class="tepi" fill="none" stroke="currentColor" stroke-width=".8" stroke-linejoin="round" opacity="0">%s</g>'
-            '<circle class="halo" r="3.2" fill="#fff" opacity="0"/><circle class="titik" r="1.1" fill="#fff" opacity="0"/>'
+            '<circle class="halo" r="3.2" fill="currentColor" opacity="0"/><circle class="titik" r="1.1" fill="currentColor" opacity="0"/>'
             '</g>') % (kelas, kelas, isi, kelas, L['isi'], gores)
 
 
@@ -54,8 +54,8 @@ ikon_tab = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="%.1f %.1f %.1f %.1
             '<stop offset="0" class="t"/><stop offset=".5" class="m"/><stop offset="1" class="g"/></radialGradient></defs>'
             '<path fill="url(#p)" fill-rule="evenodd" d="%s"/></svg>\n' % PADMA['isi'])
 svg = ('<svg id="laser" viewBox="%d %d %d %d" aria-hidden="true">' % VB
-       + '<g transform="translate(%s 0)">' % GESER + logo_svg('padma', PADMA, '#FFFFFF') + '</g>'
-       + logo_svg('firstjet', FJ, '#FFFFFF')
+       + '<g transform="translate(%s 0)">' % GESER + logo_svg('padma', PADMA, 'currentColor') + '</g>'
+       + logo_svg('firstjet', FJ, 'currentColor')
        + '</svg>')
 # UKURAN = SPLASH ANDROID (2026-09-25, "ukuran logo padma di awal loading
 # disamain dengan logo pas animasi laser"). Splash Android 12+ menggambar ikon
@@ -151,13 +151,16 @@ html = '''<!DOCTYPE html>
 <script>
 /* Tema diputuskan SEBELUM cat pertama: yang terakhir dikirim dashboard
    (localStorage halaman ini), kalau belum pernah -> tema perangkat. Layar muat
-   selalu hitam (diminta pemilik), jadi bilah status (theme-color) hitam dulu;
-   warna bilah dashboard baru dipasang sesudah layar muat dilepas. */
+   IKUT TEMA sejak 2026-09-25 (terang = putih), jadi bilah status (theme-color)
+   diberi warna layar muat dulu; warna bilah dashboard baru dipasang sesudah
+   layar muat dilepas. */
 (function () {
   var h = document.documentElement, t = null, b = null;
   try { t = localStorage.getItem('padmaTema'); b = localStorage.getItem('padmaBawah'); } catch (e) {}
   if (t !== 'dark' && t !== 'light') t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   h.setAttribute('data-tema', t);
+  var mb = document.getElementById('warnaBilah');
+  if (mb) mb.setAttribute('content', t === 'dark' ? '#000000' : '#ffffff');
   if (b) h.style.setProperty('--bawah', b);
 })();
 </script>
@@ -167,8 +170,12 @@ html = '''<!DOCTYPE html>
      baru tergambar sesudah CSS font dari Google tiba. -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" media="print" onload="this.media='all'">
 <style>
-  :root { --bawah: ''' + TERANG_BILAH + '''; }
-  html[data-tema="dark"] { --bawah: ''' + GELAP_BILAH + '''; }
+  :root { --bawah: ''' + TERANG_BILAH + '''; --muat-latar: #fff; --muat-isi: #000; }
+  html[data-tema="dark"] { --bawah: ''' + GELAP_BILAH + '''; --muat-latar: #000; --muat-isi: #fff; }
+  /* LAYAR MUAT IKUT TEMA (2026-09-25, "animasi di awal mengikuti tema? ... invert
+     color yg putih"): terang = latar putih, logo + arsiran hitam; gelap = seperti
+     dulu. Siluet logo customer berupa PNG putih -> dibalik di tema terang. */
+  html:not([data-tema="dark"]) .pola { filter: invert(1); }
   html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bawah); }
   /* Ruang atas/bawah seperti aplikasi: area poni/status dan garis navigasi HP
      (safe-area) TIDAK ditimpa iframe -- iframe tidak mengenal inset itu -- tapi
@@ -188,7 +195,7 @@ html = '''<!DOCTYPE html>
   iframe { width: 100%; height: 100%; border: 0; display: block; }
   #ukurAman { position: fixed; left: 0; bottom: 0; width: 0; height: env(safe-area-inset-bottom, 0px); visibility: hidden; pointer-events: none; }
   #muat {
-    position: fixed; inset: 0; z-index: 2; background: #000; color: #fff;
+    position: fixed; inset: 0; z-index: 2; background: var(--muat-latar); color: var(--muat-isi);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     transition: opacity .25s ease;
   }
