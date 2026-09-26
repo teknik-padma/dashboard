@@ -21,8 +21,16 @@
   var biasa = 'width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
   function atur() {
     var pendek = Math.min(screen.width || 0, screen.height || 0);
+    var panjang = Math.max(screen.width || 0, screen.height || 0);
     var lanskap = matchMedia('(orientation: landscape)').matches;
-    var ingin = (lanskap && pendek > 0 && pendek <= 500) ? 'width=' + LEBAR_LAPTOP + ', user-scalable=no, viewport-fit=cover' : biasa;
+    /* TEGAK = BENTUK HP DI SEMUA PERANGKAT (2026-09-26, pemilik dengan tangkapan
+       iPad: "kalo dia mode vertical itu pake bentuk home"). Tablet tegak (lebar
+       > 640) dulu jatuh ke tata letak tablet (bilah "Dashboard" + amplop di luar
+       akun); kini viewport 640 = tata letak HP yang diperbesar. Miring dengan
+       sisi panjang < 1280 (HP dan tablet kecil) = laptop 1280. */
+    var ingin = biasa;
+    if (pendek > 0 && lanskap && (pendek <= 500 || panjang < LEBAR_LAPTOP)) ingin = 'width=' + LEBAR_LAPTOP + ', user-scalable=no, viewport-fit=cover';
+    else if (pendek > 640 && !lanskap) ingin = 'width=640, user-scalable=no, viewport-fit=cover';
     if (m.getAttribute('content') !== ingin) m.setAttribute('content', ingin);
   }
   atur();
