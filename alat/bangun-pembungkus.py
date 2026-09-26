@@ -187,7 +187,10 @@ html = '''<!DOCTYPE html>
 (function () {
   var LEBAR_LAPTOP = 1280, m = document.querySelector('meta[name="viewport"]');
   if (!m || !window.matchMedia) return;
-  var biasa = m.getAttribute('content');
+  /* TEGAK = device-width + minimum-scale=1 (2026-09-26, dilaporkan dengan tangkapan
+     layar: sesudah dimiringkan lalu ditegakkan, Chrome menyimpan zoom-out sisa
+     width=1280, jadi HP tegak jatuh ke tata letak tablet). */
+  var biasa = 'width=device-width, initial-scale=1, minimum-scale=1, viewport-fit=cover';
   function atur() {
     var pendek = Math.min(screen.width || 0, screen.height || 0);
     var lanskap = matchMedia('(orientation: landscape)').matches;
@@ -197,6 +200,8 @@ html = '''<!DOCTYPE html>
   atur();
   window.addEventListener('orientationchange', function () { setTimeout(atur, 60); });
   window.addEventListener('resize', atur);
+  var mqArah = matchMedia('(orientation: landscape)');
+  if (mqArah.addEventListener) mqArah.addEventListener('change', atur); else if (mqArah.addListener) mqArah.addListener(atur);
 })();
 </script>
 <meta name="theme-color" content="''' + GELAP_MUAT + '''" id="warnaBilah">
