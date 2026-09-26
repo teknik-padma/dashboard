@@ -3,6 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* LANDSCAPE HP = LAPTOP DIPERKECIL (2026-09-26, pemilik, tangkapan layar A54:
+   "mending dia zoom out aja jauh sekalian kayak laptop"). Di HP yang dimiringkan
+   dashboard (lebar ~915px) jatuh ke tata letak tablet: bilah menu "Dashboard -
+   Ringkasan" dan amplop terpisah. Viewport-nya dibuat LEBAR_LAPTOP px, jadi
+   iframe benar-benar selebar laptop dan peramban memperkecil seluruhnya.
+   HP = sisi pendek layar <= 500px (tablet 600+ tidak tersentuh). screen.* dan
+   (orientation) tidak berubah oleh viewport ini sendiri, jadi tidak berputar. */
+(function () {
+  var LEBAR_LAPTOP = 1280, m = document.querySelector('meta[name="viewport"]');
+  if (!m || !window.matchMedia) return;
+  var biasa = m.getAttribute('content');
+  function atur() {
+    var pendek = Math.min(screen.width || 0, screen.height || 0);
+    var lanskap = matchMedia('(orientation: landscape)').matches;
+    var ingin = (lanskap && pendek > 0 && pendek <= 500) ? 'width=' + LEBAR_LAPTOP + ', viewport-fit=cover' : biasa;
+    if (m.getAttribute('content') !== ingin) m.setAttribute('content', ingin);
+  }
+  atur();
+  window.addEventListener('orientationchange', function () { setTimeout(atur, 60); });
+  window.addEventListener('resize', atur);
+})();
+</script>
 <meta name="theme-color" content="#16181C" id="warnaBilah">
 <!-- BOOT LEBIH CEPAT (2026-09-25): sambungan TLS ke Apps Script dibuka SEBELUM
      iframe-nya diurai, bukan sesudahnya. -->
