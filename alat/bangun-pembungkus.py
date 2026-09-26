@@ -175,7 +175,7 @@ html = '''<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <script>
 /* LANDSCAPE HP = LAPTOP DIPERKECIL (2026-09-26, pemilik, tangkapan layar A54:
    "mending dia zoom out aja jauh sekalian kayak laptop"). Di HP yang dimiringkan
@@ -190,11 +190,12 @@ html = '''<!DOCTYPE html>
   /* TEGAK = device-width + minimum-scale=1 (2026-09-26, dilaporkan dengan tangkapan
      layar: sesudah dimiringkan lalu ditegakkan, Chrome menyimpan zoom-out sisa
      width=1280, jadi HP tegak jatuh ke tata letak tablet). */
-  var biasa = 'width=device-width, initial-scale=1, minimum-scale=1, viewport-fit=cover';
+  /* Tanpa pinch zoom (2026-09-26, pemilik: "bisa ga disable pinch zoom"). */
+  var biasa = 'width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
   function atur() {
     var pendek = Math.min(screen.width || 0, screen.height || 0);
     var lanskap = matchMedia('(orientation: landscape)').matches;
-    var ingin = (lanskap && pendek > 0 && pendek <= 500) ? 'width=' + LEBAR_LAPTOP + ', viewport-fit=cover' : biasa;
+    var ingin = (lanskap && pendek > 0 && pendek <= 500) ? 'width=' + LEBAR_LAPTOP + ', user-scalable=no, viewport-fit=cover' : biasa;
     if (m.getAttribute('content') !== ingin) m.setAttribute('content', ingin);
   }
   atur();
