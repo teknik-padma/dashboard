@@ -201,9 +201,16 @@ html = '''<!DOCTYPE html>
        > 640) dulu jatuh ke tata letak tablet (bilah "Dashboard" + amplop di luar
        akun); kini viewport 640 = tata letak HP yang diperbesar. Miring dengan
        sisi panjang < 1280 (HP dan tablet kecil) = laptop 1280. */
+    /* Hanya LAYAR SENTUH, dan lebar JENDELA kalau lebih sempit dari layar
+       (2026-09-26, dilaporkan lewat ekstensi simulator HP di laptop: ekstensi
+       itu melaporkan screen.* laptop 1920x1080, jadi bingkai XR 414 dianggap
+       tablet tegak dan halaman dikecilkan dari 640). Tetikus = bukan tablet;
+       iPad layar terbagi memakai lebar jendelanya. */
+    var sentuh = matchMedia('(pointer: coarse)').matches;
+    var lebarJendela = Math.min(pendek, window.outerWidth || pendek);
     var ingin = biasa;
     if (pendek > 0 && lanskap && (pendek <= 500 || panjang < LEBAR_LAPTOP)) ingin = 'width=' + LEBAR_LAPTOP + ', user-scalable=no, viewport-fit=cover';
-    else if (pendek > 640 && !lanskap) ingin = 'width=640, user-scalable=no, viewport-fit=cover';
+    else if (sentuh && lebarJendela > 640 && !lanskap) ingin = 'width=640, user-scalable=no, viewport-fit=cover';
     if (m.getAttribute('content') !== ingin) m.setAttribute('content', ingin);
   }
   atur();
