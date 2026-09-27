@@ -11,7 +11,11 @@
    - Respons TERALIHKAN tidak pernah disimpan/disajikan (Pages 308 /app.html -> /app).
    - ./app ikut pra-simpan HANYA di *.padmagroup.pages.dev: di github.io tidak ada,
      addAll akan gagal dan SW tidak terpasang sama sekali. */
-const VERSI = 'padma-pembungkus-v6';
+/* v7 (2026-09-28, notifikasi fase 2): PUSH dari pengirim Cloudflare (repo Dashboard:
+   cepat/functions/api/kirim-push.js). Isi { judul, isi, url, tag }; ketukan memfokuskan
+   jendela aplikasi yang terbuka, atau membukanya. Tanpa `badge`: ikon berwarna jadi kotak
+   putih di bilah status Android -- lonceng bawaan Chrome lebih terbaca. */
+const VERSI = 'padma-pembungkus-v7';
 const CDN = 'padma-cdn-v1';
 const DI_PAGES = ('.' + self.location.hostname).endsWith('.padmagroup.pages.dev');
 const BERKAS = ['./', './index.html', './manifest.json', './favicon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png']
@@ -74,4 +78,24 @@ self.addEventListener('fetch', (e) => {
       return segar.catch(() => caches.match('./'));
     })
   );
+});
+
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (er) { d = { judul: 'Padma Group', isi: e.data ? e.data.text() : '' }; }
+  const opsi = { body: String(d.isi || ''), icon: 'icon-192.png',
+                 data: { url: new URL(d.url || './', self.registration.scope).href } };
+  if (d.tag) { opsi.tag = String(d.tag); opsi.renotify = true; }
+  e.waitUntil(self.registration.showNotification(String(d.judul || 'Padma Group'), opsi));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const tujuan = (e.notification.data && e.notification.data.url) || self.registration.scope;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((daftar) => {
+    for (const c of daftar) {
+      if (c.url.indexOf(self.registration.scope) === 0 && 'focus' in c) return c.focus();
+    }
+    return self.clients.openWindow(tujuan);
+  }));
 });
