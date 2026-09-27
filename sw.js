@@ -1,9 +1,22 @@
-/* Service worker pembungkus Padma Group. Hanya berkas pembungkus (situs ini
-   sendiri) yang di-cache; dashboard di script.google.com TIDAK pernah disentuh.
-   Cache dulu, disegarkan di latar (v5, 2026-09-25); lihat penangan fetch.
-   Naikkan VERSI tiap berkas di BERKAS berubah nama. */
-const VERSI = 'padma-pembungkus-v5';
-const BERKAS = ['./', './index.html', './manifest.json', './favicon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png'];
+/* Service worker pembungkus Padma Group. Cache sendiri untuk berkas pembungkus;
+   dashboard /exec (script.google.com) TIDAK pernah disentuh. Naikkan VERSI tiap isi
+   BERKAS atau penangan di bawah berubah. */
+/* v6 (2026-09-27, modifikasi bangun-cepat.py dipindah ke sini):
+   - NAVIGASI (index, app) = JARINGAN DULU, batas 3 dtk, lalu cache: versi baru terpakai
+     di pembukaan yang sama (dulu cache dulu = baru terpakai satu buka kemudian). Rilis
+     PERALIHAN pertama tetap butuh buka 2x: navigasinya masih ditangani SW lama.
+   - Berkas lain tetap cache dulu, disegarkan di latar (v5, 2026-09-25).
+   - cdnjs + Google Fonts di cache sendiri padma-cdn-v1 (luring: d3 dan Inter; v776/v786);
+     tidak ikut dibersihkan saat VERSI naik -- URL-nya berversi, isinya tidak berubah.
+   - Respons TERALIHKAN tidak pernah disimpan/disajikan (Pages 308 /app.html -> /app).
+   - ./app ikut pra-simpan HANYA di *.padmagroup.pages.dev: di github.io tidak ada,
+     addAll akan gagal dan SW tidak terpasang sama sekali. */
+const VERSI = 'padma-pembungkus-v6';
+const CDN = 'padma-cdn-v1';
+const DI_PAGES = ('.' + self.location.hostname).endsWith('.padmagroup.pages.dev');
+const BERKAS = ['./', './index.html', './manifest.json', './favicon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png']
+  .concat(DI_PAGES ? ['./app'] : []);
+const NAVIGASI_MAKS_MS = 3000;
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSI).then((c) => c.addAll(BERKAS)).then(() => self.skipWaiting()));
@@ -12,28 +25,51 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((ks) => Promise.all(ks.filter((k) => k !== VERSI).map((k) => caches.delete(k))))
+      .then((ks) => Promise.all(ks.filter((k) => k !== VERSI && k !== CDN).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
 
+function simpan(req, r) {
+  if (r && r.ok && !r.redirected) {
+    const salin = r.clone();
+    caches.open(VERSI).then((c) => c.put(req, salin));
+  }
+  return r;
+}
+function dariCache(req) {
+  return caches.match(req, { ignoreSearch: true }).then((lama) => (lama && !lama.redirected) ? lama : null);
+}
+
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
-  if (e.request.method !== 'GET' || url.origin !== self.location.origin) return;
-  /* CACHE DULU, SEGARKAN DI LATAR (2026-09-25, "booting pembungkus bisa
-     dipercepat?"). Dulu jaringan dulu: tiap buka menunggu satu perjalanan
-     ke GitHub/Cloudflare SEBELUM iframe dashboard boleh mulai dimuat. Sekarang
-     cangkang langsung dari cache; versi baru dari jaringan disimpan untuk
-     pembukaan BERIKUTNYA (harga: pembaruan pembungkus terpakai satu buka kemudian). */
-  const segar = fetch(e.request).then((r) => {
-    if (r && r.ok) {
-      const salin = r.clone();
-      caches.open(VERSI).then((c) => c.put(e.request, salin));
-    }
-    return r;
-  });
+  if (e.request.method !== 'GET') return;
+  if (url.origin === 'https://cdnjs.cloudflare.com' || url.origin === 'https://fonts.googleapis.com' ||
+      url.origin === 'https://fonts.gstatic.com') {
+    e.respondWith(caches.open(CDN).then((c) => c.match(e.request).then((ada) => ada ||
+      fetch(e.request).then((r) => { if (r && (r.ok || r.type === 'opaque')) c.put(e.request, r.clone()); return r; }))));
+    return;
+  }
+  if (url.origin !== self.location.origin) return;
+  const segar = fetch(e.request).then((r) => simpan(e.request, r));
+  if (e.request.mode === 'navigate') {
+    /* Jaringan menjawab dalam 3 dtk -> itu yang dipakai; lewat 3 dtk -> cache (kalau
+       ada) sementara jaringan tetap mengisi cache; jaringan gagal -> cache -> './'. */
+    e.respondWith(new Promise((jawab) => {
+      let sudah = false;
+      const pakai = (r) => { if (!sudah && r) { sudah = true; jawab(r); } };
+      const cadangan = () => dariCache(e.request).then((lama) => { if (lama) pakai(lama); return lama; });
+      const jam = setTimeout(cadangan, NAVIGASI_MAKS_MS);
+      segar.then((r) => { clearTimeout(jam); pakai(r); }).catch(() => {
+        clearTimeout(jam);
+        cadangan().then((lama) => { if (!lama) caches.match('./').then((x) => pakai(x || Response.error())); });
+      });
+    }));
+    e.waitUntil(segar.catch(() => {}));
+    return;
+  }
   e.respondWith(
-    caches.match(e.request, { ignoreSearch: true }).then((lama) => {
+    dariCache(e.request).then((lama) => {
       if (lama) { e.waitUntil(segar.catch(() => {})); return lama; }
       return segar.catch(() => caches.match('./'));
     })
