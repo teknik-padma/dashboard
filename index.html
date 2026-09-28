@@ -513,6 +513,13 @@
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('sw.js').catch(function (err) { console.warn('service worker gagal', err); });
     });
+    /* Push tiba selagi terbuka (sw.js v8): tag diteruskan ke dashboard, yang menyegarkan datanya
+       sendiri (Dashboard v831: lembur disetujui -> Persetujuan + pil Home). */
+    navigator.serviceWorker.addEventListener('message', function (e) {
+      var d = e.data;
+      if (!d || d.padma !== 1 || d.jenis !== 'push' || !sumberDasbor) return;
+      try { sumberDasbor.w.postMessage({ padma: 1, jenis: 'push', tag: String(d.tag || '') }, sumberDasbor.asal); } catch (err) {}
+    });
   }
 
   /* LASER MEMBUKA LOGO (2026-09-25 malam, opsi A -- pemilik: "A go go go").

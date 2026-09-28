@@ -15,7 +15,7 @@
    cepat/functions/api/kirim-push.js). Isi { judul, isi, url, tag }; ketukan memfokuskan
    jendela aplikasi yang terbuka, atau membukanya. Tanpa `badge`: ikon berwarna jadi kotak
    putih di bilah status Android -- lonceng bawaan Chrome lebih terbaca. */
-const VERSI = 'padma-pembungkus-v7';
+const VERSI = 'padma-pembungkus-v8';
 const CDN = 'padma-cdn-v1';
 const DI_PAGES = ('.' + self.location.hostname).endsWith('.padmagroup.pages.dev');
 const BERKAS = ['./', './index.html', './manifest.json', './favicon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png']
@@ -86,7 +86,12 @@ self.addEventListener('push', (e) => {
   const opsi = { body: String(d.isi || ''), icon: 'icon-192.png',
                  data: { url: new URL(d.url || './', self.registration.scope).href } };
   if (d.tag) { opsi.tag = String(d.tag); opsi.renotify = true; }
-  e.waitUntil(self.registration.showNotification(String(d.judul || 'Padma Group'), opsi));
+  /* v8 (Dashboard v831): halaman yang sedang terbuka ikut dikabari -> dashboard menyegarkan
+     datanya sendiri (lembur disetujui). Hanya tag, isi notifikasi tidak diteruskan. */
+  const kabari = self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((daftar) => {
+    daftar.forEach((c) => { try { c.postMessage({ padma: 1, jenis: 'push', tag: String(d.tag || '') }); } catch (er) {} });
+  });
+  e.waitUntil(Promise.all([self.registration.showNotification(String(d.judul || 'Padma Group'), opsi), kabari]));
 });
 
 self.addEventListener('notificationclick', (e) => {
