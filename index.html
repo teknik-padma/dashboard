@@ -313,7 +313,7 @@
       var kamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
       var tokenTitip = '';
       try { tokenTitip = localStorage.getItem('padmaToken') || ''; } catch (err) {}
-      try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: kamera, token: tokenTitip, muatUlang: true, titipan: titipBaca() }, asal); } catch (err) {}
+      try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: kamera, token: tokenTitip, muatUlang: true, unduh: true, titipan: titipBaca() }, asal); } catch (err) {}
     }
     /* TITIPAN SIMPANAN (2026-09-25, dashboard v700): antrean simpan, draf dan
        pengaturan dashboard dicerminkan ke sini, karena localStorage iframe
@@ -345,6 +345,21 @@
        sebelum login ulang. Bingkai Google yang me-reload dirinya sendiri berakhir
        layar putih; halaman ini boleh. Diumumkan lewat muatUlang:true di atas. */
     if (d.jenis === 'muatUlang') location.reload();
+    /* Unduh berkas dari dashboard (Dashboard v829, PDF bukti lembur): halaman puncak yang
+       mengunduh -- unduhan dari bingkai Google bersarang tidak bisa diandalkan di aplikasi
+       terpasang. Diumumkan lewat unduh:true di atas. Hanya PDF/CSV, maks ~8 MB. */
+    if (d.jenis === 'unduh' && typeof d.data === 'string' && d.data.length < 11000000 && typeof d.nama === 'string' &&
+        /^(application\/pdf|text\/csv)$/.test(String(d.mime || ''))) {
+      try {
+        var bin = atob(d.data), buf = new Uint8Array(bin.length);
+        for (var ib = 0; ib < bin.length; ib++) buf[ib] = bin.charCodeAt(ib);
+        var urlU = URL.createObjectURL(new Blob([buf], { type: d.mime }));
+        var aU = document.createElement('a');
+        aU.href = urlU; aU.download = d.nama.replace(/[\/:*?"<>|]+/g, '-').slice(0, 120) || 'berkas';
+        document.body.appendChild(aU); aU.click(); document.body.removeChild(aU);
+        setTimeout(function () { URL.revokeObjectURL(urlU); }, 4000);
+      } catch (err) { console.warn('unduh gagal', err); }
+    }
     /* Tautan tiket Scan QR dibuka langsung (diminta "gausah diklik dulu"):
        halaman puncak boleh pindah tanpa ketukan, iframe tidak. Hanya
        script.google.com -- pesan dari Google pun tidak boleh membawa ke
