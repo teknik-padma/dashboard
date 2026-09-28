@@ -338,6 +338,9 @@
     }
     if (d.jenis === 'tema' && e.source) { sumberDasbor = { w: e.source, asal: asal }; kirimAman(); }
     if (d.jenis === 'pindaiQr' && typeof d.id === 'string' && e.source) kameraBuka(e.source, asal, d.id);
+    /* Pemindai ditutup di dashboard (Back HP / tombol x, Dashboard v826): kamera di sini
+       ikut ditutup. Dulu tetap menutupi layar, dan Back berikutnya keluar dari aplikasi. */
+    if (d.jenis === 'batalPindai' && kam.minta && (!d.id || d.id === kam.minta.id)) kameraJawab('BATAL');
     /* Muat ulang SENYAP atas permintaan dashboard (2026-09-25): sesudah Keluar dan
        sebelum login ulang. Bingkai Google yang me-reload dirinya sendiri berakhir
        layar putih; halaman ini boleh. Diumumkan lewat muatUlang:true di atas. */
