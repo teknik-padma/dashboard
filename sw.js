@@ -15,7 +15,8 @@
    cepat/functions/api/kirim-push.js). Isi { judul, isi, url, tag }; ketukan memfokuskan
    jendela aplikasi yang terbuka, atau membukanya. Tanpa `badge`: ikon berwarna jadi kotak
    putih di bilah status Android -- lonceng bawaan Chrome lebih terbaca. */
-const VERSI = 'padma-pembungkus-v8';
+/* v9 (2026-09-29, Dashboard v858): index.html layar terbagi (dua iframe dashboard). */
+const VERSI = 'padma-pembungkus-v9';
 const CDN = 'padma-cdn-v1';
 const DI_PAGES = ('.' + self.location.hostname).endsWith('.padmagroup.pages.dev');
 const BERKAS = ['./', './index.html', './manifest.json', './favicon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png']

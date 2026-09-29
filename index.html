@@ -112,6 +112,28 @@
     top: env(safe-area-inset-top, 0px); bottom: 0;
   }
   iframe { width: 100%; height: 100%; border: 0; display: block; }
+  /* LAYAR TERBAGI (2026-09-29, Dashboard v858; pemilik: "split screen tapi di dalam dashboard").
+     Dua dashboard berdampingan di halaman INI, bukan di dalam satu dashboard: tiap iframe
+     punya lebar aslinya sendiri, jadi media query, innerWidth grafik dan elemen fixed di
+     keduanya tetap benar. Dibuka dari tombol di rel dashboard (pesan "belah"); ditutup dari
+     tombol yang sama atau x di garis pembagi (dashboard selebar < 1025 px tidak punya rel). */
+  #bingkai { display: flex; }
+  #bingkai > iframe { flex: 1 1 0; min-width: 0; width: auto; }
+  #belahGaris, #dasbor2 { display: none; }
+  html.belah #belahGaris { display: block; }
+  html.belah #dasbor2 { display: block; flex: 0 0 var(--belah-w, 42%); }
+  #belahGaris { flex: 0 0 7px; position: relative; z-index: 1; cursor: col-resize; touch-action: none; background: #E5E7EB; }
+  #belahGaris::after { content: ""; position: absolute; left: 2px; top: 50%; width: 3px; height: 36px; margin-top: -18px; border-radius: 2px; background: #9CA3AF; }
+  #belahGaris:hover, #belahGaris:focus-visible, html.menyeret #belahGaris { background: #CBD5E1; outline: none; }
+  html[data-tema="dark"] #belahGaris { background: #2A2D33; }
+  html[data-tema="dark"] #belahGaris:hover, html[data-tema="dark"] #belahGaris:focus-visible, html[data-tema="dark"].menyeret #belahGaris { background: #3A3F47; }
+  #belahTutup { position: absolute; top: 10px; left: 50%; width: 24px; height: 24px; margin-left: -12px; padding: 0; border-radius: 50%;
+    border: 1px solid #D1D5DB; background: #fff; color: #374151; font: 600 15px/1 Inter, system-ui, sans-serif; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  #belahTutup:hover { background: #F3F4F6; }
+  html[data-tema="dark"] #belahTutup { background: #1F2226; color: #E5E7EB; border-color: #3A3F47; }
+  html.menyeret, html.menyeret #belahGaris { cursor: col-resize; }
+  html.menyeret iframe { pointer-events: none; }   /* iframe menelan pointermove selama menyeret */
   #ukurAman { position: fixed; left: 0; bottom: 0; width: 0; height: env(safe-area-inset-bottom, 0px); visibility: hidden; pointer-events: none; }
   #muat {
     position: fixed; inset: 0; z-index: 2; background: var(--muat-latar); color: var(--muat-isi);
@@ -203,6 +225,10 @@
      diminta sesudah seluruh pola logo diurai. #muat (z-index 2) tetap di atasnya. -->
 <div id="bingkai"><iframe id="dasbor"
         title="Padma Group"
+        allow="camera; clipboard-read; clipboard-write; fullscreen; geolocation"></iframe><div id="belahGaris" role="separator" aria-orientation="vertical" tabindex="0"
+        aria-label="Pembagi layar" title="Seret untuk mengubah lebar; klik dua kali = kembali ke ukuran awal"><button type="button" id="belahTutup"
+        title="Tutup jendela kanan" aria-label="Tutup jendela kanan">&times;</button></div><iframe id="dasbor2"
+        title="Padma Group (jendela kedua)"
         allow="camera; clipboard-read; clipboard-write; fullscreen; geolocation"></iframe></div>
 <script>
 /* SUMBER DASHBOARD MENURUT HOST (2026-09-27, dipindah dari bangun-cepat.py). Di
@@ -302,7 +328,7 @@
       h.style.setProperty('--muat-gelap', d.latar);
       simpan('padmaLatarGelap', d.latar);
     }
-    if (d.jenis === 'siap') { siap = true; siapLanjut(); }
+    if (d.jenis === 'siap' && frameKe(e.source) === 1) { siap = true; siapLanjut(); if (belahDiminta() && !belahBuka()) belahPasang(true); }
     /* Dijawab tiap pesan tema (tiap dashboard dimuat): "ada kamera di sini".
        Dashboard yang mendengarnya memakai kamera halaman ini untuk Scan QR. */
     /* Dijawab tiap pesan tema: "ada pembungkus", kamera tersedia atau tidak,
@@ -313,7 +339,8 @@
       var kamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
       var tokenTitip = '';
       try { tokenTitip = localStorage.getItem('padmaToken') || ''; } catch (err) {}
-      try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: kamera, token: tokenTitip, muatUlang: true, unduh: true, titipan: titipBaca() }, asal); } catch (err) {}
+      try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: kamera, token: tokenTitip, muatUlang: true, unduh: true, titipan: titipBaca(),
+        belah: belahBoleh(), belahBuka: belahBuka(), kedua: frameKe(e.source) === 2 }, asal); } catch (err) {}
     }
     /* TITIPAN SIMPANAN (2026-09-25, dashboard v700): antrean simpan, draf dan
        pengaturan dashboard dicerminkan ke sini, karena localStorage iframe
@@ -336,7 +363,16 @@
     if (d.jenis === 'simpanToken' && typeof d.token === 'string' && d.token.length < 2000) {
       try { if (d.token) localStorage.setItem('padmaToken', d.token); else localStorage.removeItem('padmaToken'); } catch (err) {}
     }
-    if (d.jenis === 'tema' && e.source) { sumberDasbor = { w: e.source, asal: asal }; kirimAman(); }
+    if (d.jenis === 'tema' && e.source) {
+      if (frameKe(e.source) === 2) sumberDua = { w: e.source, asal: asal };
+      else { sumberDasbor = { w: e.source, asal: asal }; kirimAman(); }
+    }
+    /* Tombol layar terbagi di rel dashboard: utama = buka/tutup, jendela kedua = tutup dirinya. */
+    if (d.jenis === 'belah' && e.source) {
+      var mau = frameKe(e.source) === 2 ? false : !belahBuka();
+      simpan('padmaBelah', mau ? '1' : '0');
+      belahPasang(mau);
+    }
     if (d.jenis === 'pindaiQr' && typeof d.id === 'string' && e.source) kameraBuka(e.source, asal, d.id);
     /* Pemindai ditutup di dashboard (Back HP / tombol x, Dashboard v826): kamera di sini
        ikut ditutup. Dulu tetap menutupi layar, dan Back berikutnya keluar dari aplikasi. */
@@ -378,6 +414,93 @@
     try { sumberDasbor.w.postMessage({ padma: 1, jenis: 'inset', bawah: px }, sumberDasbor.asal); } catch (err) {}
   }
   window.addEventListener('resize', function () { setTimeout(kirimAman, 150); });
+
+  /* LAYAR TERBAGI (Dashboard v858). Jendela kedua dimuat saat dibuka dan DIBUANG saat
+     ditutup (about:blank): dashboard kedua yang tersembunyi tetap menarik data di latar.
+     Token ikut sendiri: kedua iframe satu asal (localStorage sama) dan pembungkus
+     menitipkan token ke keduanya. Lebar jendela kanan = pecahan layar (padmaBelahLebar),
+     tiap sisi min. BELAH_MIN_SISI. Layar < BELAH_MIN_LAYAR: disembunyikan, pilihan tetap. */
+  var dasbor2 = document.getElementById('dasbor2'), belahGaris = document.getElementById('belahGaris');
+  var sumberDua = null;
+  var BELAH_MIN_LAYAR = 1100, BELAH_MIN_SISI = 360, BELAH_AWAL = 0.42;
+  function belahBoleh() { return window.innerWidth >= BELAH_MIN_LAYAR; }
+  function belahBuka() { return h.classList.contains('belah'); }
+  function belahDiminta() { try { return localStorage.getItem('padmaBelah') === '1'; } catch (e) { return false; } }
+  /* Bingkai asal pesan: naik dari e.source sampai anak langsung halaman ini (.parent boleh
+     dibaca lintas asal) -- bingkai Google /exec bersarang dua tingkat di dalam iframe kita. */
+  function frameKe(src) {
+    try {
+      var w = src;
+      for (var i = 0; i < 10 && w && w.parent && w.parent !== window && w.parent !== w; i++) w = w.parent;
+      return (dasbor2 && w === dasbor2.contentWindow) ? 2 : 1;
+    } catch (err) { return 1; }
+  }
+  function belahJepit(px) {
+    var W = window.innerWidth;
+    return Math.round(Math.max(BELAH_MIN_SISI, Math.min(W - BELAH_MIN_SISI - 7, px)));   /* 7 = garis pembagi */
+  }
+  function belahLebar() {
+    var f = BELAH_AWAL;
+    try { var s = parseFloat(localStorage.getItem('padmaBelahLebar')); if (s > 0 && s < 1) f = s; } catch (e) {}
+    h.style.setProperty('--belah-w', belahJepit(window.innerWidth * f) + 'px');
+  }
+  function belahKabar() {
+    var isi = { padma: 1, jenis: 'belahKeadaan', belah: belahBoleh(), buka: belahBuka() };
+    [sumberDasbor, sumberDua].forEach(function (s) { if (s) { try { s.w.postMessage(isi, s.asal); } catch (err) {} } });
+  }
+  function belahPasang(buka) {
+    buka = !!buka && belahBoleh();
+    var ada = dasbor2.getAttribute('src') && dasbor2.getAttribute('src') !== 'about:blank';
+    if (buka) {
+      belahLebar();
+      if (!ada) dasbor2.src = dasbor.src;
+    } else if (ada) {
+      dasbor2.src = 'about:blank';
+      sumberDua = null;
+    }
+    h.classList.toggle('belah', buka);
+    belahKabar();
+  }
+  var belahJam = 0;
+  window.addEventListener('resize', function () {
+    clearTimeout(belahJam);
+    belahJam = setTimeout(function () {
+      if (belahBuka() !== (belahDiminta() && belahBoleh())) belahPasang(belahDiminta());
+      else { if (belahBuka()) belahLebar(); belahKabar(); }
+    }, 150);
+  });
+  document.getElementById('belahTutup').addEventListener('click', function () { simpan('padmaBelah', '0'); belahPasang(false); });
+  /* Seret dengan pointer event + setPointerCapture (drag HTML5 membekukan iframe Apps Script). */
+  belahGaris.addEventListener('pointerdown', function (e) {
+    if (e.target && e.target.id === 'belahTutup') return;
+    e.preventDefault();
+    h.classList.add('menyeret');
+    try { belahGaris.setPointerCapture(e.pointerId); } catch (err) {}
+    var gerak = function (ev) { h.style.setProperty('--belah-w', belahJepit(window.innerWidth - ev.clientX - 3) + 'px'); };
+    var akhir = function () {
+      h.classList.remove('menyeret');
+      belahGaris.removeEventListener('pointermove', gerak);
+      belahGaris.removeEventListener('pointerup', akhir);
+      belahGaris.removeEventListener('pointercancel', akhir);
+      var px = parseFloat(h.style.getPropertyValue('--belah-w'));
+      if (px > 0) simpan('padmaBelahLebar', String(px / window.innerWidth));
+    };
+    belahGaris.addEventListener('pointermove', gerak);
+    belahGaris.addEventListener('pointerup', akhir);
+    belahGaris.addEventListener('pointercancel', akhir);
+  });
+  belahGaris.addEventListener('dblclick', function (e) {
+    if (e.target && e.target.id === 'belahTutup') return;
+    simpan('padmaBelahLebar', String(BELAH_AWAL)); belahLebar();
+  });
+  belahGaris.addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    var px = parseFloat(h.style.getPropertyValue('--belah-w')) || window.innerWidth * BELAH_AWAL;
+    px = belahJepit(px + (e.key === 'ArrowLeft' ? 40 : -40));
+    h.style.setProperty('--belah-w', px + 'px');
+    simpan('padmaBelahLebar', String(px / window.innerWidth));
+  });
 
   /* KAMERA SCAN QR (2026-09-24). Dashboard meminta lewat postMessage, halaman
      ini membuka kamera belakang, membaca QR (BarcodeDetector, kalau tidak ada
@@ -517,8 +640,10 @@
        sendiri (Dashboard v831: lembur disetujui -> Persetujuan + pil Home). */
     navigator.serviceWorker.addEventListener('message', function (e) {
       var d = e.data;
-      if (!d || d.padma !== 1 || d.jenis !== 'push' || !sumberDasbor) return;
-      try { sumberDasbor.w.postMessage({ padma: 1, jenis: 'push', tag: String(d.tag || '') }, sumberDasbor.asal); } catch (err) {}
+      if (!d || d.padma !== 1 || d.jenis !== 'push') return;
+      [sumberDasbor, sumberDua].forEach(function (s) {   /* layar terbagi: keduanya ikut segar */
+        if (s) { try { s.w.postMessage({ padma: 1, jenis: 'push', tag: String(d.tag || '') }, s.asal); } catch (err) {} }
+      });
     });
   }
 
