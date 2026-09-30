@@ -16,7 +16,11 @@
    jendela aplikasi yang terbuka, atau membukanya. Tanpa `badge`: ikon berwarna jadi kotak
    putih di bilah status Android -- lonceng bawaan Chrome lebih terbaca. */
 /* v9 (2026-09-29, Dashboard v858): index.html layar terbagi (dua iframe dashboard). */
-const VERSI = 'padma-pembungkus-v9';
+/* v10 (2026-09-30, notifikasi unduh): ./unduhan/<nama> disajikan HANYA dari cache padma-unduhan
+   (diisi index.html sesudah relai unduh; Pages tidak punya berkasnya), dan notifikasi `buka:true`
+   selalu membuka URL-nya, bukan sekadar memfokuskan jendela yang sudah terbuka. */
+const VERSI = 'padma-pembungkus-v10';
+const UNDUHAN = 'padma-unduhan';
 const CDN = 'padma-cdn-v1';
 const DI_PAGES = ('.' + self.location.hostname).endsWith('.padmagroup.pages.dev');
 const BERKAS = ['./', './index.html', './manifest.json', './favicon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png']
@@ -30,7 +34,7 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((ks) => Promise.all(ks.filter((k) => k !== VERSI && k !== CDN).map((k) => caches.delete(k))))
+      .then((ks) => Promise.all(ks.filter((k) => k !== VERSI && k !== CDN && k !== UNDUHAN).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -56,6 +60,12 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.indexOf('/unduhan/') !== -1) {
+    e.respondWith(caches.open(UNDUHAN).then((c) => c.match(e.request, { ignoreSearch: true })).then((r) => r ||
+      new Response('Berkas ini sudah tidak tersimpan di perangkat. Unduh ulang dari aplikasi.',
+        { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })));
+    return;
+  }
   const segar = fetch(e.request).then((r) => simpan(e.request, r));
   if (e.request.mode === 'navigate') {
     /* Jaringan menjawab dalam 3 dtk -> itu yang dipakai; lewat 3 dtk -> cache (kalau
@@ -98,6 +108,7 @@ self.addEventListener('push', (e) => {
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const tujuan = (e.notification.data && e.notification.data.url) || self.registration.scope;
+  if (e.notification.data && e.notification.data.buka) { e.waitUntil(self.clients.openWindow(tujuan)); return; }
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((daftar) => {
     for (const c of daftar) {
       if (c.url.indexOf(self.registration.scope) === 0 && 'focus' in c) return c.focus();
