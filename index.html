@@ -765,9 +765,28 @@
   }
   /* Ukiran selalu tuntas; "siap" lebih dulu menunggu (siapLanjut), langkah() yang melepas. */
   if (GERAK_KURANG) logoDiam();
-  else (function langkah() {
+  /* JAM LASER TANPA LOMPAT (2026-10-01 sore, pemilik: "animasinya agak patah di awal"): detik pertama
+     dashboard (~2,4 MB, satu utas dengan halaman ini di pages.dev) sedang diurai -> bingkai tersendat, dan
+     jam dinding membuat titik laser MELOMPAT mengejar. Jam ini maju paling banyak LANGKAH_MAKS_MS per
+     bingkai: saat tersendat laser menunggu, tidak melompat (harga: bisa selesai sedikit sesudah kilau). */
+  var LANGKAH_MAKS_MS = 34, jamLaser = 0, bingkaiLalu = 0;
+  /* Kilau (CSS) berjalan sejak cat pertama, laser baru sesudah tabel jalurnya dihitung: kilau dimulai
+     ulang di bingkai pertama laser supaya keduanya berangkat bersama. */
+  function mulaiKilau() {
+    Array.prototype.forEach.call(document.querySelectorAll('.kilau-pita, .kilau-isi'), function (el) {
+      el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+    });
+  }
+  function majuJam() {
+    var kini = Date.now();
+    if (!bingkaiLalu) mulaiKilau();
+    if (bingkaiLalu) jamLaser += Math.min(kini - bingkaiLalu, LANGKAH_MAKS_MS);
+    bingkaiLalu = kini;
+    return jamLaser;
+  }
+  if (!GERAK_KURANG) (function langkah() {
     if (!jalan) return;
-    var dt = waktu();
+    var dt = majuJam();
     JADWAL.forEach(function (J) {
       var pos = tepi(J, jalur(dt, J.buka));
       // isi utuh memudar masuk di ujung ukiran (sudut yang tak terjangkau jejak)
