@@ -237,9 +237,21 @@
    langsung /exec. `app`, BUKAN `app.html`: Pages mengalihkan /app.html -> /app (308),
    dan respons teralihkan dari service worker untuk navigasi iframe ditolak Chrome.
    Tepat sesudah tag iframe, jadi permintaannya tetap berangkat seawal dulu. */
+/* PASANG DITUNDA (2026-10-01 sore, pemilik: "logo dan animasi padma first jet masih agak patah"): di
+   pages.dev `app` SATU ASAL dengan halaman ini = satu utas; menguraikannya (~2,4 MB) tepat di awal ukiran
+   membuat laser tersendat (dipasang di 65% pun jedanya hanya pindah). Kini isinya DIUNDUH sejak awal (fetch, di
+   luar utas) dan iframe dipasang SESUDAH ukiran selesai (padmaPasangDasbor dari langkah()), jaring 5 dtk. /exec
+   (asal lain = proses lain) dan gerak dikurangi tetap langsung. Harga: ~waktu urai+boot ditambahkan sesudah ukiran. */
 (function () {
   var diPages = ('.' + location.hostname).endsWith('.padmagroup.pages.dev');
-  document.getElementById('dasbor').src = diPages ? 'app' : "https://script.google.com/macros/s/AKfycbzBRPeuPWoL3UdErFpn9WngpqQNiqvf9zH0dOhAsNEGlI1s9Uhm0XIGkWwalLctpwwR/exec";
+  var dasbor = document.getElementById('dasbor');
+  var tujuan = diPages ? 'app' : "https://script.google.com/macros/s/AKfycbzBRPeuPWoL3UdErFpn9WngpqQNiqvf9zH0dOhAsNEGlI1s9Uhm0XIGkWwalLctpwwR/exec";
+  var terpasang = false;
+  window.padmaPasangDasbor = function () { if (terpasang) return; terpasang = true; dasbor.src = tujuan; };
+  var gerakKurang = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  if (!diPages || gerakKurang) { window.padmaPasangDasbor(); return; }
+  try { fetch(tujuan, { credentials: 'same-origin' }).catch(function () {}); } catch (e) {}
+  setTimeout(window.padmaPasangDasbor, 5000);   /* jaring: rAF/timer laser tidak jalan */
 })();
 </script>
 <div id="muat" role="status" aria-label="Memuat Padma Group">
@@ -648,7 +660,7 @@
   window.addEventListener('offline', cekOnline);
   window.addEventListener('online', function () {
     cekOnline();
-    if (!siap) dasbor.src = dasbor.src;
+    if (!siap) { if (dasbor.getAttribute('src')) dasbor.src = dasbor.src; else window.padmaPasangDasbor(); }
   });
 
   /* Service worker: syarat instal Chrome + cangkang pembungkus tetap terbuka
@@ -761,6 +773,7 @@
       J.titik.forEach(function (c) { c.setAttribute('opacity', 0); });
     });
     animSelesai = true;
+    window.padmaPasangDasbor();
     if (siap) lepas();
   }
   /* Ukiran selalu tuntas; "siap" lebih dulu menunggu (siapLanjut), langkah() yang melepas. */
@@ -798,6 +811,7 @@
     });
     if (dt >= AKHIR) {
       animSelesai = true;
+      window.padmaPasangDasbor();   /* baru sekarang: penguraian dashboard tidak memotong ukiran */
       if (siap) lepas();  // belum siap: logo utuh diam, masuk begitu "siap" datang
       return;
     }
