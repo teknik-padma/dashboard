@@ -636,7 +636,7 @@
     /* SELALU TUNTAS (2026-10-01, sesudah pindah ke Worker + D1 dashboard siap < 1 dtk,
        pemilik: "animasi cloudflare ga keliatan"): laser tidak lagi dipotong atau disusul --
        siap menunggu ukiran selesai (langkah() yang melepas). Ukirannya yang dipersingkat:
-       UKIR_MS pendek tiap buka, penuh sekali sehari (LASER_PENUH di bawah). Susul di atas
+       UKIR_MS = satu lintasan kilau latar (KILAU_MS di bawah). Susul di atas
        tidak dipakai lagi; disimpan untuk kalau muat kembali lambat. */
   }
   setTimeout(lepas, 25000);
@@ -681,9 +681,14 @@
   /* PENDEK TIAP BUKA, PENUH SEKALI SEHARI (2026-10-01): 1,2 dtk ukiran + pudar = layar muat
      1,5 dtk; buka pertama tiap hari (tanggal perangkat) 5,7 + 0,3 = 6 dtk. Tanggal dicatat
      baru sesudah ukiran penuh SELESAI -- ditutup di tengah = besok-nya tidak hilang. */
-  var KUNCI_PENUH = 'padmaLaserPenuh', HARI_INI = new Date().toDateString(), LASER_PENUH = true;
-  try { LASER_PENUH = localStorage.getItem(KUNCI_PENUH) !== HARI_INI; } catch (e) {}
-  var UKIR_MS = LASER_PENUH ? 5700 : 1200, PUDAR_MS = 300, AKHIR = UKIR_MS + PUDAR_MS;
+  /* SELARAS KILAU (2026-10-01 sore, pemilik: "kembalikan animasi logo padma dan [first jet] tapi dibuat
+     selaras cepat sama backgroundnya"): ukiran = SATU lintasan kilau latar (kilauPita 5s, menyeberang di
+     0-45% = 2,25 dtk) -- mulai bersama, logo utuh tepat saat kilau keluar layar. Ubah KILAU_MS/KILAU_LINTAS
+     hanya bersama @keyframes kilauPita/kilauIsi di atas. Gerak dikurangi = logo diam (kilau juga mati).
+     Menggantikan pendek/penuh harian (v11) dan logo diam (v12). lihat docs/ui/boot-dan-runtime.md § Laser selaras kilau */
+  var KILAU_MS = 5000, KILAU_LINTAS = 0.45;
+  var GERAK_KURANG = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var UKIR_MS = KILAU_MS * KILAU_LINTAS, PUDAR_MS = 300, AKHIR = UKIR_MS + PUDAR_MS;
   var JADWAL = [  // ms sejak halaman dibuka
     { buka: [0, UKIR_MS], logo: svg.querySelector('.padma') },
     { buka: [0, UKIR_MS], logo: svg.querySelector('.firstjet') }
@@ -748,17 +753,37 @@
     if (window.requestAnimationFrame) requestAnimationFrame(jalankan);
     setTimeout(jalankan, 100);
   }
-  /* LOGO DIAM (2026-10-01, pemilik: "hapus animasi logo padma dan first jet. biarkan mereka disitu udah
-     jadi"): ukiran laser tidak diputar lagi -- kedua logo tampil UTUH sejak bingkai pertama (isi penuh,
-     mask terbuka, titik laser tersembunyi), animasi dianggap selesai, layar muat pudar begitu "siap".
-     Mesin ukir di atas dibiarkan (dipakai lagi kalau diminta). lihat docs/ui/boot-dan-runtime.md § Logo diam */
-  JADWAL.forEach(function (J) {
-    J.penuh.setAttribute('opacity', 1);
-    J.gores.forEach(function (g, i) { g.style.strokeDashoffset = 0; J.offLama[i] = 0; });
-    J.titik.forEach(function (c) { c.setAttribute('opacity', 0); });
-  });
-  animSelesai = true;
-  if (siap) lepas();
+  /* LOGO DIAM (v12) kini hanya untuk gerak dikurangi -- kedua logo utuh sejak bingkai pertama. */
+  function logoDiam() {
+    JADWAL.forEach(function (J) {
+      J.penuh.setAttribute('opacity', 1);
+      J.gores.forEach(function (g, i) { g.style.strokeDashoffset = 0; J.offLama[i] = 0; });
+      J.titik.forEach(function (c) { c.setAttribute('opacity', 0); });
+    });
+    animSelesai = true;
+    if (siap) lepas();
+  }
+  /* Ukiran selalu tuntas; "siap" lebih dulu menunggu (siapLanjut), langkah() yang melepas. */
+  if (GERAK_KURANG) logoDiam();
+  else (function langkah() {
+    if (!jalan) return;
+    var dt = waktu();
+    JADWAL.forEach(function (J) {
+      var pos = tepi(J, jalur(dt, J.buka));
+      // isi utuh memudar masuk di ujung ukiran (sudut yang tak terjangkau jejak)
+      J.penuh.setAttribute('opacity', jalur(dt, [J.buka[1], AKHIR]));
+      J.titik.forEach(function (c, i) {
+        if (pos) { c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y); c.setAttribute('opacity', i ? 0.28 : 1); }
+        else c.setAttribute('opacity', 0);
+      });
+    });
+    if (dt >= AKHIR) {
+      animSelesai = true;
+      if (siap) lepas();  // belum siap: logo utuh diam, masuk begitu "siap" datang
+      return;
+    }
+    berikut(langkah);
+  })();
 })();
 </script>
 </body>

@@ -21,7 +21,8 @@
    selalu membuka URL-nya, bukan sekadar memfokuskan jendela yang sudah terbuka. */
 /* v11 (2026-10-01): layar muat laser pendek tiap buka, penuh sekali sehari (index.html). */
 /* v12 (2026-10-01): logo Padma + FirstJet diam, tanpa ukiran laser (index.html). */
-const VERSI = 'padma-pembungkus-v12';
+/* v13 (2026-10-01 sore): laser kembali, selaras satu lintasan kilau latar (index.html). */
+const VERSI = 'padma-pembungkus-v13';
 const UNDUHAN = 'padma-unduhan';
 const CDN = 'padma-cdn-v1';
 const DI_PAGES = ('.' + self.location.hostname).endsWith('.padmagroup.pages.dev');
