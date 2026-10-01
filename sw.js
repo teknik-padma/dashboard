@@ -23,7 +23,8 @@
 /* v12 (2026-10-01): logo Padma + FirstJet diam, tanpa ukiran laser (index.html). */
 /* v13 (2026-10-01 sore): laser kembali, selaras satu lintasan kilau latar (index.html). */
 /* v14 (2026-10-01 sore): jam laser tanpa lompat di awal (index.html). */
-const VERSI = 'padma-pembungkus-v14';
+/* v15 (2026-10-01 sore): iframe dashboard dipasang sesudah ukiran selesai (index.html). */
+const VERSI = 'padma-pembungkus-v15';
 const UNDUHAN = 'padma-unduhan';
 const CDN = 'padma-cdn-v1';
 const DI_PAGES = ('.' + self.location.hostname).endsWith('.padmagroup.pages.dev');
