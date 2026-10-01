@@ -748,27 +748,17 @@
     if (window.requestAnimationFrame) requestAnimationFrame(jalankan);
     setTimeout(jalankan, 100);
   }
-  (function langkah() {
-    if (!jalan) return;
-    var dt = waktu();
-    var redup = Math.max(0, Math.min(1, (4 - lajuKini()) / 3));   // 1x -> penuh, >= 4x -> hilang
-    JADWAL.forEach(function (J) {
-      var pos = tepi(J, jalur(dt, J.buka));
-      // isi utuh memudar masuk di ujung ukiran (sudut yang tak terjangkau jejak)
-      J.penuh.setAttribute('opacity', jalur(dt, [J.buka[1], AKHIR]));
-      J.titik.forEach(function (c, i) {
-        if (pos && redup > 0) { c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y); c.setAttribute('opacity', (i ? 0.28 : 1) * redup); }
-        else c.setAttribute('opacity', 0);
-      });
-    });
-    if (dt >= AKHIR) {
-      animSelesai = true;
-      if (LASER_PENUH) simpan(KUNCI_PENUH, HARI_INI);
-      if (siap) lepas();  // belum siap: logo putih diam, masuk begitu "siap" datang
-      return;
-    }
-    berikut(langkah);
-  })();
+  /* LOGO DIAM (2026-10-01, pemilik: "hapus animasi logo padma dan first jet. biarkan mereka disitu udah
+     jadi"): ukiran laser tidak diputar lagi -- kedua logo tampil UTUH sejak bingkai pertama (isi penuh,
+     mask terbuka, titik laser tersembunyi), animasi dianggap selesai, layar muat pudar begitu "siap".
+     Mesin ukir di atas dibiarkan (dipakai lagi kalau diminta). lihat docs/ui/boot-dan-runtime.md § Logo diam */
+  JADWAL.forEach(function (J) {
+    J.penuh.setAttribute('opacity', 1);
+    J.gores.forEach(function (g, i) { g.style.strokeDashoffset = 0; J.offLama[i] = 0; });
+    J.titik.forEach(function (c) { c.setAttribute('opacity', 0); });
+  });
+  animSelesai = true;
+  if (siap) lepas();
 })();
 </script>
 </body>
