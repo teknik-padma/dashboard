@@ -629,15 +629,15 @@
      SUSUL_MS dan pudar .25. Jaring 25 dtk tetap. */
   function siapLanjut() {
     if (animSelesai) { lepas(); return; }
-    if (susul) return;
-    var dt = waktu();
     /* MUAT CEPAT (2026-09-27, pemilik: "animasi laser logo dan first jet kurang cocok
        dibagian akhir ... ujung2nya baru keisi kalo loadingnya cepat"): siap sebelum
        1,5 dtk -> ukiran TIDAK disusul (menyusul memaksa sisa ukiran selesai dalam
-       SUSUL_MS -> tepi logo terisi mendadak); layar muat langsung memudar. */
-    if (dt < 1500) { lepas(); return; }
-    if (AKHIR - dt <= SUSUL_MS) return;   // sisa sedikit: biarkan selesai di laju normal
-    susul = { t0: Date.now(), dt0: dt, sisa: AKHIR - dt };
+       SUSUL_MS -> tepi logo terisi mendadak); layar muat langsung memudar. DIGANTI 2026-10-01: */
+    /* SELALU TUNTAS (2026-10-01, sesudah pindah ke Worker + D1 dashboard siap < 1 dtk,
+       pemilik: "animasi cloudflare ga keliatan"): laser tidak lagi dipotong atau disusul --
+       siap menunggu ukiran selesai (langkah() yang melepas). Ukirannya yang dipersingkat:
+       UKIR_MS pendek tiap buka, penuh sekali sehari (LASER_PENUH di bawah). Susul di atas
+       tidak dipakai lagi; disimpan untuk kalau muat kembali lambat. */
   }
   setTimeout(lepas, 25000);
 
@@ -678,7 +678,12 @@
      ujung, supaya sudut runcing yang tak terjangkau jejak (~1-2%) tampil tanpa
      lompatan. lihat docs/ui/boot-dan-runtime.md § Laser membuka logo */
   var svg = document.getElementById('laser');
-  var UKIR_MS = 8500, PUDAR_MS = 300, AKHIR = UKIR_MS + PUDAR_MS;
+  /* PENDEK TIAP BUKA, PENUH SEKALI SEHARI (2026-10-01): 1,2 dtk ukiran + pudar = layar muat
+     1,5 dtk; buka pertama tiap hari (tanggal perangkat) 5,7 + 0,3 = 6 dtk. Tanggal dicatat
+     baru sesudah ukiran penuh SELESAI -- ditutup di tengah = besok-nya tidak hilang. */
+  var KUNCI_PENUH = 'padmaLaserPenuh', HARI_INI = new Date().toDateString(), LASER_PENUH = true;
+  try { LASER_PENUH = localStorage.getItem(KUNCI_PENUH) !== HARI_INI; } catch (e) {}
+  var UKIR_MS = LASER_PENUH ? 5700 : 1200, PUDAR_MS = 300, AKHIR = UKIR_MS + PUDAR_MS;
   var JADWAL = [  // ms sejak halaman dibuka
     { buka: [0, UKIR_MS], logo: svg.querySelector('.padma') },
     { buka: [0, UKIR_MS], logo: svg.querySelector('.firstjet') }
@@ -758,6 +763,7 @@
     });
     if (dt >= AKHIR) {
       animSelesai = true;
+      if (LASER_PENUH) simpan(KUNCI_PENUH, HARI_INI);
       if (siap) lepas();  // belum siap: logo putih diam, masuk begitu "siap" datang
       return;
     }
