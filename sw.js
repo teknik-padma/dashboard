@@ -19,7 +19,8 @@
 /* v10 (2026-09-30, notifikasi unduh): ./unduhan/<nama> disajikan HANYA dari cache padma-unduhan
    (diisi index.html sesudah relai unduh; Pages tidak punya berkasnya), dan notifikasi `buka:true`
    selalu membuka URL-nya, bukan sekadar memfokuskan jendela yang sudah terbuka. */
-const VERSI = 'padma-pembungkus-v10';
+/* v11 (2026-10-01): layar muat laser pendek tiap buka, penuh sekali sehari (index.html). */
+const VERSI = 'padma-pembungkus-v11';
 const UNDUHAN = 'padma-unduhan';
 const CDN = 'padma-cdn-v1';
 const DI_PAGES = ('.' + self.location.hostname).endsWith('.padmagroup.pages.dev');
