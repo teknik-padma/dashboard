@@ -25,7 +25,9 @@
 /* v14 (2026-10-01 sore): jam laser tanpa lompat di awal (index.html). */
 /* v15 (2026-10-01 sore): iframe dashboard dipasang sesudah ukiran selesai (index.html). */
 /* v16 (2026-10-01 malam): unduhan selalu disalin ke cache + pesan bukaUnduhan (banner dashboard membuka PDF). */
-const VERSI = 'padma-pembungkus-v16';
+/* v17 (2026-10-02): ikon aplikasi digambar ulang -- cincin lingkaran sempurna (pemilik: "kanan kirinya tidak lingkaran
+   sempurna"); manifest memakai ?v=2 supaya Chrome mengambil ikon baru. */
+const VERSI = 'padma-pembungkus-v17';
 const UNDUHAN = 'padma-unduhan';
 const CDN = 'padma-cdn-v1';
 const DI_PAGES = ('.' + self.location.hostname).endsWith('.padmagroup.pages.dev');
