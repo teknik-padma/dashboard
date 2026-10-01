@@ -351,7 +351,7 @@
       var kamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
       var tokenTitip = '';
       try { tokenTitip = localStorage.getItem('padmaToken') || ''; } catch (err) {}
-      try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: kamera, token: tokenTitip, muatUlang: true, unduh: true, titipan: titipBaca(),
+      try { e.source.postMessage({ padma: 1, jenis: 'pembungkus', kamera: kamera, token: tokenTitip, muatUlang: true, unduh: true, bukaUnduhan: true, titipan: titipBaca(),
         belah: belahBoleh(), belahBuka: belahBuka(), kedua: frameKe(e.source) === 2 }, asal); } catch (err) {}
     }
     /* TITIPAN SIMPANAN (2026-09-25, dashboard v700): antrean simpan, draf dan
@@ -397,10 +397,14 @@
        kasih notif di hp supaya bisa di klik filenya dari notif tsb"): salinan berkas ke cache
        padma-unduhan (5 terakhir) -> ketukan notifikasi membuka ./unduhan/<nama> yang disajikan SW.
        Hanya bila izin notifikasi sudah diberikan (Akun > Notifikasi); tidak pernah meminta izin di sini. */
+    /* v16 (2026-10-01, Dashboard v940; pemilik: "kalo ada notif pdf terunduh ketika saya klik dia buka pdf tsb"):
+       salinan ke cache SELALU dibuat (dulu hanya bila izin notifikasi ada), supaya banner "PDF diunduh" di
+       dashboard bisa membukanya lewat pesan bukaUnduhan. Notifikasi sistem tetap hanya dengan izin. */
     function unduhKabar(blob, nama, mime) {
-      if (!('serviceWorker' in navigator) || !window.caches || !('Notification' in window) || Notification.permission !== 'granted') return;
+      if (!('serviceWorker' in navigator) || !window.caches) return;
+      var boleh = ('Notification' in window) && Notification.permission === 'granted';
       navigator.serviceWorker.getRegistration().then(function (reg) {
-        if (!reg || !reg.showNotification) return;
+        if (!reg) return;
         var url = new URL('unduhan/' + encodeURIComponent(nama), reg.scope).href;
         return caches.open('padma-unduhan').then(function (c) {
           return c.put(url, new Response(blob, { headers: { 'Content-Type': mime,
@@ -408,6 +412,7 @@
             .then(function () { return c.keys(); })
             .then(function (ks) { return Promise.all(ks.slice(0, Math.max(0, ks.length - 5)).map(function (k) { return c.delete(k); })); });
         }).then(function () {
+          if (!boleh || !reg.showNotification) return;
           return reg.showNotification(mime === 'application/pdf' ? 'PDF tersimpan' : 'Berkas tersimpan',
             { body: nama + ' · Ketuk untuk membuka.', icon: 'icon-192.png', tag: 'unduh', renotify: true, data: { url: url, buka: true } });
         });
@@ -433,6 +438,13 @@
        halaman puncak boleh pindah tanpa ketukan, iframe tidak. Hanya
        script.google.com -- pesan dari Google pun tidak boleh membawa ke
        situs lain. Tombol Kembali pulang ke dashboard. */
+    /* v16: banner "PDF diunduh" diketuk -> buka salinan ./unduhan/<nama> (disajikan SW dari cache). Nama dibersihkan
+       sama dengan relai unduh; hanya jalur unduhan/ milik sendiri. Aktivasi ketukan di iframe ikut ke halaman ini. */
+    if (d.jenis === 'bukaUnduhan' && typeof d.nama === 'string') {
+      var nmB = d.nama.replace(/[\/:*?"<>|]+/g, '-').slice(0, 120) || 'berkas';
+      var urlB = new URL('unduhan/' + encodeURIComponent(nmB), location.href).href;
+      if (!window.open(urlB, '_blank')) location.href = urlB;
+    }
     if (d.jenis === 'buka' && typeof d.url === 'string' && d.url.indexOf('https://script.google.com/') === 0) {
       location.href = d.url;
     }
