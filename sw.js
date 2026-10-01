@@ -27,10 +27,11 @@
 /* v16 (2026-10-01 malam): unduhan selalu disalin ke cache + pesan bukaUnduhan (banner dashboard membuka PDF). */
 /* v17 (2026-10-02): ikon aplikasi digambar ulang -- cincin lingkaran sempurna (pemilik: "kanan kirinya tidak lingkaran
    sempurna"); manifest memakai ?v=2 supaya Chrome mengambil ikon baru. */
-const VERSI = 'padma-pembungkus-v17';
+/* v18 (2026-10-02): padma-demo.pages.dev memuat ./app seperti padmagroup (index.html + DI_PAGES). */
+const VERSI = 'padma-pembungkus-v18';
 const UNDUHAN = 'padma-unduhan';
 const CDN = 'padma-cdn-v1';
-const DI_PAGES = ('.' + self.location.hostname).endsWith('.padmagroup.pages.dev');
+const DI_PAGES = /(^|\.)(padmagroup|padma-demo)\.pages\.dev$/.test(self.location.hostname);   /* v18: + situs demo */
 const BERKAS = ['./', './index.html', './manifest.json', './favicon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png']
   .concat(DI_PAGES ? ['./app'] : []);
 const NAVIGASI_MAKS_MS = 3000;
