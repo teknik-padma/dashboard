@@ -142,6 +142,13 @@
     transition: opacity .6s ease;
   }
   #muat.lepas { opacity: 0; pointer-events: none; }
+  /* PUDAR TANPA PATAH (2026-10-15, dashboard v1187; pemilik: "stutter ... as the login card fades into the dashboard",
+     lalu "still buggy" sesudah v1186). Yang terlihat memudar ke dashboard adalah layar muat INI, bukan gerbang aplikasi
+     (gerbang sudah hilang di bawahnya sebelum "siap" dikirim). Selama pudar: pola + kilau (mask + filter, dilukis ulang
+     tiap bingkai) dibekukan, dan satu bingkai di .99 dulu supaya dashboard di iframe sudah terlukis saat pudar mulai. */
+  #muat.mau-lepas { opacity: .99; will-change: opacity; }
+  #muat.mau-lepas.lepas { opacity: 0; }   /* lebih spesifik: .lepas di atas kalah urutan dari .mau-lepas */
+  #muat.mau-lepas .pola-isi, #muat.mau-lepas .kilau-pita, #muat.mau-lepas .kilau-isi { animation-play-state: paused; }
   #laser { width: min(248px, 66vw); height: auto; aspect-ratio: 248 / 128; overflow: visible; }
   /* Halo MERAPAT ke titik (2026-09-25 malam, "make the glow closer to laser"):
      r 4.5 -> 2.6 -> 1.8, blur 1.4 -> .9 -> .5, terang .45 -> .6 -> .28 (malam yang
@@ -309,12 +316,19 @@
   function titipTulis(t) {
     try { localStorage.setItem('padmaTitip', JSON.stringify(t)); } catch (e) { console.warn('titipan gagal disimpan', e); }
   }
+  /* MUAT_PUDAR_MS = transition #muat (.6s); BUKAN PUDAR_MS (nama itu milik laser di bawah, var yang sama menimpanya ke 300). Dulu display:none di 300 ms -- sejak transisi dinaikkan .25 -> .6s (2026-09-25
+     malam) layar muat lenyap mendadak di tengah pudar (~50%). Kini: mau-lepas (beku + .99) -> 2 bingkai -> lepas ->
+     sembunyi sesudah pudar tuntas. */
+  var MUAT_PUDAR_MS = 600;
   function lepas() {
     if (!jalan || TAHAN) return;
     jalan = false;
-    muat.classList.add('lepas');
+    muat.classList.add('mau-lepas');
     warnaBilah();
-    setTimeout(function () { muat.style.display = 'none'; }, 300);
+    berikut(function () { berikut(function () {
+      muat.classList.add('lepas');
+      setTimeout(function () { muat.style.display = 'none'; }, MUAT_PUDAR_MS + 50);
+    }); });
   }
   function warnaBilah() {
     if (jalan) return;  // layar muat masih tampil: bilah tetap hitam
