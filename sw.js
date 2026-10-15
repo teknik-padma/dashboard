@@ -35,7 +35,11 @@
    per buka. versi.json lambat (> VERSI_MAKS_MS) -> salinan dipakai, pembaruan diunduh di latar = terpakai buka
    berikutnya. versi.json tidak ada/gagal (situs demo, rilis lama) -> jalur v6 seperti dulu. lihat dashboard
    docs/ui/boot-dan-runtime.md § Buka ulang tanpa unduh ulang (v1179) */
-const VERSI = 'padma-pembungkus-v19';
+/* v20 (2026-10-15, dashboard v1181): berkas BERSIDIK di nama (`kamus-<12 hex>.js`, dari bangun-cepat.py) = isinya tidak
+   pernah berubah -> cache dulu TANPA unduh ulang di latar (jalur umum mengunduh ulang 266 KB tiap buka). Menyimpan satu
+   menghapus saudara lama berawalan sama, jadi cache tidak menumpuk satu kamus per rilis. */
+const VERSI = 'padma-pembungkus-v20';
+const ABADI = /\/([a-z]+)-[0-9a-f]{12}\.js$/;
 const UNDUHAN = 'padma-unduhan';
 const CDN = 'padma-cdn-v1';
 const DI_PAGES = /(^|\.)(padmagroup|padma-demo)\.pages\.dev$/.test(self.location.hostname);   /* v18: + situs demo */
@@ -121,6 +125,19 @@ self.addEventListener('fetch', (e) => {
      dan menimpa salinan bersidik dengan salinan tanpa sidik (terukur di uji-sw.padmagroup.pages.dev). */
   const nama = namaNavigasi(url);
   if (nama) { navigasiBersidik(e, nama); return; }
+  const abadi = ABADI.exec(url.pathname);
+  if (abadi) {
+    e.respondWith(caches.match(e.request, { ignoreSearch: true }).then((ada) => ada || fetch(e.request).then((r) => {
+      if (r && r.ok && !r.redirected) {
+        const salin = r.clone();
+        e.waitUntil(caches.open(VERSI).then((c) => c.keys().then((ks) => Promise.all(ks
+          .filter((k) => { const m = ABADI.exec(new URL(k.url).pathname); return m && m[1] === abadi[1] && k.url !== e.request.url; })
+          .map((k) => c.delete(k)))).then(() => c.put(e.request, salin))));
+      }
+      return r;
+    })));
+    return;
+  }
   const segar = fetch(e.request).then((r) => simpan(e.request, r));
   if (e.request.mode === 'navigate') {
     /* Jaringan menjawab dalam 3 dtk -> itu yang dipakai; lewat 3 dtk -> cache (kalau
