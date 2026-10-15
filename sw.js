@@ -28,16 +28,28 @@
 /* v17 (2026-10-02): ikon aplikasi digambar ulang -- cincin lingkaran sempurna (pemilik: "kanan kirinya tidak lingkaran
    sempurna"); manifest memakai ?v=2 supaya Chrome mengambil ikon baru. */
 /* v18 (2026-10-02): padma-demo.pages.dev memuat ./app seperti padmagroup (index.html + DI_PAGES). */
-const VERSI = 'padma-pembungkus-v18';
+/* v19 (2026-10-15, dashboard v1179, pemilik: "optimization for low internet speed"): NAVIGASI index + app di pages.dev
+   bertanya ./versi.json dulu (sidik SHA-256 isi berkas, ditulis bangun-cepat.py, ~150 byte). Sidik sama dengan salinan
+   cache -> salinan langsung dipakai, TANPA unduh. Dulu tiap buka mengunduh ulang /app 1,07 MB (Pages tidak memberi
+   ETag, jadi tidak pernah 304) dan menunggu 3 dtk dua kali di sinyal jelek; terukur 400 kbps: siap 8,8 dtk, 1,2-1,7 MB
+   per buka. versi.json lambat (> VERSI_MAKS_MS) -> salinan dipakai, pembaruan diunduh di latar = terpakai buka
+   berikutnya. versi.json tidak ada/gagal (situs demo, rilis lama) -> jalur v6 seperti dulu. lihat dashboard
+   docs/ui/boot-dan-runtime.md § Buka ulang tanpa unduh ulang (v1179) */
+const VERSI = 'padma-pembungkus-v19';
 const UNDUHAN = 'padma-unduhan';
 const CDN = 'padma-cdn-v1';
 const DI_PAGES = /(^|\.)(padmagroup|padma-demo)\.pages\.dev$/.test(self.location.hostname);   /* v18: + situs demo */
 const BERKAS = ['./', './index.html', './manifest.json', './favicon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png']
   .concat(DI_PAGES ? ['./app'] : []);
 const NAVIGASI_MAKS_MS = 3000;
+const VERSI_MAKS_MS = 1500;
+const LINGKUP = new URL(self.registration.scope).pathname;
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSI).then((c) => c.addAll(BERKAS)).then(() => self.skipWaiting()));
+  /* v19: ./app disimpan BERSIDIK (bukan addAll), supaya buka pertama sesudah pasang tidak mengunduhnya lagi. */
+  e.waitUntil(caches.open(VERSI).then((c) => c.addAll(BERKAS.filter((b) => b !== './app')))
+    .then(() => DI_PAGES ? fetch('./app').then((r) => { if (!r.ok) throw new Error('app ' + r.status); return simpanBersidik('./app', r); }) : null)
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
@@ -54,6 +66,35 @@ function simpan(req, r) {
     caches.open(VERSI).then((c) => c.put(req, salin));
   }
   return r;
+}
+/* v19: sidik SHA-256 (hex) isi respons disimpan sebagai header X-Padma-Sidik di salinan cache -- dibandingkan dengan
+   versi.json tanpa menghitung ulang 4 MB tiap buka. Content-Encoding/Length dibuang: badan yang disimpan sudah terurai. */
+function hex(buf) { return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join(''); }
+function simpanBersidik(req, r) {
+  if (!r || !r.ok || r.redirected) return Promise.resolve();
+  return r.clone().arrayBuffer().then((isi) => crypto.subtle.digest('SHA-256', isi).then((h) => {
+    const hs = new Headers(r.headers);
+    hs.delete('Content-Encoding'); hs.delete('Content-Length');
+    hs.set('X-Padma-Sidik', hex(h));
+    return caches.open(VERSI).then((c) => c.put(req, new Response(isi, { status: r.status, statusText: r.statusText, headers: hs })));
+  }));
+}
+/* Satu pertanyaan versi.json dipakai bersama index + app (+ layar terbagi) selama 30 dtk. Jawaban: objek sidik,
+   null = tidak ada/gagal, undefined = belum datang dalam maksMs (permintaannya tetap berjalan untuk penanya berikut). */
+let versiJanji = null, versiSejak = 0;
+function versiTerbaru(maksMs) {
+  if (!versiJanji || Date.now() - versiSejak > 30000) {
+    versiSejak = Date.now();
+    versiJanji = fetch('./versi.json', { cache: 'no-store' })
+      .then((r) => (r.ok && !r.redirected) ? r.json() : null).catch(() => null);
+  }
+  return Promise.race([versiJanji, new Promise((j) => setTimeout(() => j(undefined), maksMs))]);
+}
+function namaNavigasi(url) {
+  if (!DI_PAGES) return null;
+  if (url.pathname === LINGKUP + 'app') return 'app';
+  if (url.pathname === LINGKUP || url.pathname === LINGKUP + 'index.html') return 'index';
+  return null;
 }
 function dariCache(req) {
   return caches.match(req, { ignoreSearch: true }).then((lama) => (lama && !lama.redirected) ? lama : null);
@@ -75,6 +116,11 @@ self.addEventListener('fetch', (e) => {
         { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } })));
     return;
   }
+  /* v19: index/app lewat sidik, BUKAN hanya navigasi: index.html juga mengunduh `app` lebih dulu dengan fetch biasa
+     (pasang ditunda sesudah ukiran) -- jalur "cache dulu, segarkan di latar" di bawah mengunduh ulang 1 MB tiap buka
+     dan menimpa salinan bersidik dengan salinan tanpa sidik (terukur di uji-sw.padmagroup.pages.dev). */
+  const nama = namaNavigasi(url);
+  if (nama) { navigasiBersidik(e, nama); return; }
   const segar = fetch(e.request).then((r) => simpan(e.request, r));
   if (e.request.mode === 'navigate') {
     /* Jaringan menjawab dalam 3 dtk -> itu yang dipakai; lewat 3 dtk -> cache (kalau
@@ -99,6 +145,53 @@ self.addEventListener('fetch', (e) => {
     })
   );
 });
+
+/* v19: index/app di pages.dev. Urutan: salinan bersidik + versi.json sama -> salinan (tanpa jaringan lagi);
+   versi.json lambat -> salinan, lalu di latar unduh baru bila sidiknya beda; selain itu (beda, tanpa salinan,
+   versi.json tidak ada) -> jalur v6 jaringan dulu 3 dtk, hasilnya disimpan bersidik. */
+/* Satu unduhan per berkas, dibagi fetch awal index.html + navigasi iframe (+ layar terbagi): versi baru tidak
+   pernah diunduh dua kali. Tiap peminta mendapat salinannya sendiri (clone). */
+const unduhJalan = {};
+function unduhBersama(e, nama, kunci, alamat) {
+  if (!unduhJalan[nama]) {
+    unduhJalan[nama] = fetch(alamat, { credentials: 'same-origin' }).then((r) => {
+      const simpanan = (r && r.ok && !r.redirected) ? simpanBersidik(kunci, r.clone()).catch(() => {}) : Promise.resolve();
+      simpanan.then(() => { delete unduhJalan[nama]; });
+      return { r, simpanan };
+    }, (err) => { delete unduhJalan[nama]; throw err; });
+  }
+  return unduhJalan[nama].then((h) => { e.waitUntil(h.simpanan); return h.r.clone(); });
+}
+function navigasiBersidik(e, nama) {
+  const req = e.request;
+  const kunci = nama === 'app' ? './app' : './';
+  const unduh = () => unduhBersama(e, nama, kunci, req.url);
+  e.respondWith(caches.match(kunci).then((lama) => {
+    lama = (lama && !lama.redirected) ? lama : null;
+    const sidikLama = lama && lama.headers.get('X-Padma-Sidik');
+    return (lama ? versiTerbaru(VERSI_MAKS_MS) : Promise.resolve(null)).then((v) => {
+      if (lama && sidikLama && v && v[nama] === sidikLama) return lama;
+      if (lama && v === undefined) {
+        e.waitUntil(versiJanji.then((v2) => {
+          if (v2 && v2[nama] && v2[nama] !== sidikLama) return unduh().catch(() => {});
+        }));
+        return lama;
+      }
+      return new Promise((jawab) => {
+        let sudah = false;
+        const pakai = (r) => { if (!sudah && r) { sudah = true; jawab(r); } };
+        const segar = unduh();
+        e.waitUntil(segar.catch(() => {}));
+        const jam = setTimeout(() => { if (lama) pakai(lama); }, NAVIGASI_MAKS_MS);
+        segar.then((r) => { clearTimeout(jam); pakai(r); }).catch(() => {
+          clearTimeout(jam);
+          if (lama) { pakai(lama); return; }
+          caches.match('./').then((x) => pakai(x || Response.error()));
+        });
+      });
+    });
+  }));
+}
 
 self.addEventListener('push', (e) => {
   let d = {};
