@@ -1,6 +1,7 @@
 """Membangun halaman pembungkus Padma Group (GitHub Pages teknik-padma/dashboard).
 Pakai: python bangun-pembungkus.py <folder repo pembungkus>
 Menulis index.html, manifest.json, sw.js, favicon.svg (ikon PNG: alat/bangun-ikon.py)."""
+import random
 import json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from jiplak_logo import jiplak
@@ -112,7 +113,10 @@ LEBAR_PX, LEBAR_VW = 248, 66
 POLA_DIR = os.path.join(ALAT, 'pola-customer')
 CUST = json.load(open(os.path.join(POLA_DIR, 'daftar.json'), encoding='utf-8'))
 assert len(CUST) >= 12, len(CUST)
-SEL_W, SEL_H, KOLOM, BARIS_POLA = 132, 76, 5, 14
+# UBIN 15 KOLOM (2026-10-19, dashboard v1193, pemilik: "saat loading awal kenapa ikon logo customer hanya sedikit tidak
+# variatif?"): ubin 5 kolom = 660 px, jadi di PC 1280-1920 tiap baris berulang 2-3x BERDAMPINGAN (INDOKUAT, Coca-Cola
+# kembar sebaris). 15 x 14 = 1980 px: satu layar PC tanpa ulang mendatar; isi lewat susun_pola() di bawah.
+SEL_W, SEL_H, KOLOM, BARIS_POLA = 132, 76, 15, 14
 W, H = SEL_W * KOLOM, SEL_H * BARIS_POLA
 # POLA BERJALAN (2026-09-25, "apa logonya gerak kesamping horizontal atau
 # misal ke barat daya/barat laut ya?"): seluruh pola bergeser TEPAT satu ubin
@@ -124,11 +128,36 @@ JALAN_DTK = round((GESER_X ** 2 + GESER_Y ** 2) ** 0.5 / LAJU_PX_DTK)
 
 
 # PRIORITAS SPK TERBANYAK (2026-09-25, "logonya diprioritasin dari spk
-# terbanyak"): daftar.json sudah urut jumlah SPK (cekLogoPola). Semua logo
-# sekali, lalu yang teratas mengisi sisa slot sekali lagi -- mulai dari baris
-# atas ubin.
+# terbanyak"): daftar.json sudah urut jumlah SPK (cekLogoPola). v1193: 210 slot / 45 logo = tiap logo 4-5x, jadi
+# urutan saja tidak cukup -- tiap slot mengambil logo yang PALING JARANG dipakai (seri: SPK terbanyak) dan tidak
+# muncul di +-4 sel sebaris atau +-3 sel di 3 baris atas/bawah (ubin bersambung: tepi ikut dicek ke seberang). Seri
+# diundi dengan benih tetap (urutan murni berulang tiap 3 baris -- satu kolom Vinilon/Coca-Cola, terlihat di 1600 px).
 SLOT = KOLOM * BARIS_POLA
-URUTAN = (CUST + CUST[:max(0, SLOT - len(CUST))])[:SLOT] if len(CUST) < SLOT else CUST[:SLOT]
+
+
+def susun_pola():
+    grid, pakai = {}, {L['id']: 0 for L in CUST}
+    undi = random.Random(1193)
+    for r in range(BARIS_POLA):
+        for c in range(KOLOM):
+            dekat = set()
+            for dc in range(1, 5):
+                dekat.add(grid.get((r, (c - dc) % KOLOM)))
+                dekat.add(grid.get((r, (c + dc) % KOLOM)))
+            for dr in (1, 2, 3):
+                for dc in range(-3, 4):
+                    dekat.add(grid.get(((r - dr) % BARIS_POLA, (c + dc) % KOLOM)))
+                    dekat.add(grid.get(((r + dr) % BARIS_POLA, (c + dc) % KOLOM)))
+            calon = [L for L in CUST if L['id'] not in dekat] or CUST
+            sedikit = min(pakai[x['id']] for x in calon)
+            L = undi.choice([x for x in calon if pakai[x['id']] == sedikit])
+            grid[(r, c)] = L['id']
+            pakai[L['id']] += 1
+    per_id = {L['id']: L for L in CUST}
+    return [per_id[grid[(r, c)]] for r in range(BARIS_POLA) for c in range(KOLOM)]
+
+
+URUTAN = susun_pola()
 
 
 def gambar_pola():
