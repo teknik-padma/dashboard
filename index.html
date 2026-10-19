@@ -149,6 +149,11 @@
   #muat.mau-lepas { opacity: .99; will-change: opacity; }
   #muat.mau-lepas.lepas { opacity: 0; }   /* lebih spesifik: .lepas di atas kalah urutan dari .mau-lepas */
   #muat.mau-lepas .pola-isi, #muat.mau-lepas .kilau-pita, #muat.mau-lepas .kilau-isi { animation-play-state: paused; }
+  /* BEKU SELAMA DASHBOARD DIMUAT (2026-10-19, dashboard v1202; pemilik: logo patah "last before it fades"): sesudah ukiran
+     iframe dipasang dan dashboard (satu utas) membekukan halaman ~1 dtk -- pola + kilau yang masih bergerak itulah yang
+     patah. Kilau sedang di luar layar (ukiran = lintasan pertamanya): cukup tidak diulang; pola berhenti. */
+  #muat.beku .pola-isi { animation-play-state: paused; }
+  #muat.beku .kilau-pita, #muat.beku .kilau-isi { animation-iteration-count: 1; }
   #laser { width: min(248px, 66vw); height: auto; aspect-ratio: 248 / 128; overflow: visible; }
   /* Halo MERAPAT ke titik (2026-09-25 malam, "make the glow closer to laser"):
      r 4.5 -> 2.6 -> 1.8, blur 1.4 -> .9 -> .5, terang .45 -> .6 -> .28 (malam yang
@@ -825,7 +830,20 @@
     bingkaiLalu = kini;
     return jamLaser;
   }
-  if (!GERAK_KURANG) (function langkah() {
+  /* MULAI SESUDAH TENANG (2026-10-19, dashboard v1202; pemilik: logo patah "first when it starts drawing"): bingkai
+     pertama halaman (cat pertama pola + 45 gambar) tersendat 100-170 ms di profil HP, dan laser dulu berangkat tepat di
+     situ. Kini menunggu TENANG_N bingkai < TENANG_MS berturut-turut, paling lama TENANG_MAKS_MS. */
+  var TENANG_MS = 25, TENANG_N = 3, TENANG_MAKS_MS = 700;
+  function tungguTenang(fn) {
+    var lalu = 0, n = 0, t0 = Date.now();
+    (function cek() {
+      var kini = Date.now();
+      if (lalu) n = (kini - lalu < TENANG_MS) ? n + 1 : 0;
+      lalu = kini;
+      if (n >= TENANG_N || kini - t0 > TENANG_MAKS_MS) fn(); else berikut(cek);
+    })();
+  }
+  if (!GERAK_KURANG) tungguTenang(function langkah() {
     if (!jalan) return;
     var dt = majuJam();
     JADWAL.forEach(function (J) {
@@ -839,12 +857,13 @@
     });
     if (dt >= AKHIR) {
       animSelesai = true;
+      document.getElementById('muat').classList.add('beku');
       window.padmaPasangDasbor();   /* baru sekarang: penguraian dashboard tidak memotong ukiran */
       if (siap) lepas();  // belum siap: logo utuh diam, masuk begitu "siap" datang
       return;
     }
     berikut(langkah);
-  })();
+  });
 })();
 </script>
 </body>
