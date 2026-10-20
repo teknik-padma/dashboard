@@ -149,11 +149,6 @@
   #muat.mau-lepas { opacity: .99; will-change: opacity; }
   #muat.mau-lepas.lepas { opacity: 0; }   /* lebih spesifik: .lepas di atas kalah urutan dari .mau-lepas */
   #muat.mau-lepas .pola-isi, #muat.mau-lepas .kilau-pita, #muat.mau-lepas .kilau-isi { animation-play-state: paused; }
-  /* BEKU SELAMA DASHBOARD DIMUAT (2026-10-19, dashboard v1202; pemilik: logo patah "last before it fades"): sesudah ukiran
-     iframe dipasang dan dashboard (satu utas) membekukan halaman ~1 dtk -- pola + kilau yang masih bergerak itulah yang
-     patah. Kilau sedang di luar layar (ukiran = lintasan pertamanya): cukup tidak diulang; pola berhenti. */
-  #muat.beku .pola-isi { animation-play-state: paused; }
-  #muat.beku .kilau-pita, #muat.beku .kilau-isi { animation-iteration-count: 1; }
   #laser { width: min(248px, 66vw); height: auto; aspect-ratio: 248 / 128; overflow: visible; }
   /* Halo MERAPAT ke titik (2026-09-25 malam, "make the glow closer to laser"):
      r 4.5 -> 2.6 -> 1.8, blur 1.4 -> .9 -> .5, terang .45 -> .6 -> .28 (malam yang
@@ -857,7 +852,6 @@
     });
     if (dt >= AKHIR) {
       animSelesai = true;
-      document.getElementById('muat').classList.add('beku');
       window.padmaPasangDasbor();   /* baru sekarang: penguraian dashboard tidak memotong ukiran */
       if (siap) lepas();  // belum siap: logo utuh diam, masuk begitu "siap" datang
       return;
