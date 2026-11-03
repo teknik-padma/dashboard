@@ -252,7 +252,8 @@
 (function () {
   /* v18 (2026-10-02): situs demo padma-demo.pages.dev juga punya ./app (pemilik: "situs demo tidak menampilkan apa apa" --
      di sana pembungkus memuat /exec Apps Script). */
-  var diPages = /(^|\.)(padmagroup|padma-demo)\.pages\.dev$/.test(location.hostname);
+  /* dashboard v1290: padmagroup.id = domain sendiri project Pages padmagroup, punya ./app yang sama. */
+  var diPages = /(^|\.)((padmagroup|padma-demo)\.pages\.dev|padmagroup\.id)$/.test(location.hostname);
   var dasbor = document.getElementById('dasbor');
   var tujuan = diPages ? 'app' : "https://script.google.com/macros/s/AKfycbzBRPeuPWoL3UdErFpn9WngpqQNiqvf9zH0dOhAsNEGlI1s9Uhm0XIGkWwalLctpwwR/exec";
   var terpasang = false;
