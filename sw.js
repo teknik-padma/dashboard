@@ -42,7 +42,7 @@ const VERSI = 'padma-pembungkus-v20';
 const ABADI = /\/([a-z]+)-[0-9a-f]{12}\.js$/;
 const UNDUHAN = 'padma-unduhan';
 const CDN = 'padma-cdn-v1';
-const DI_PAGES = /(^|\.)((padmagroup|padma-demo)\.pages\.dev|padmagroup\.id)$/.test(self.location.hostname);   /* dashboard v1290: + padmagroup.id */   /* v18: + situs demo */
+const DI_PAGES = /(^|\.)((padmagroup|padma-demo)\.pages\.dev|padmagroup\.id|padmasolutiondashboard\.com)$/.test(self.location.hostname);   /* dashboard v1290: + padmagroup.id */   /* v18: + situs demo */
 const BERKAS = ['./', './index.html', './manifest.json', './favicon.svg', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png']
   .concat(DI_PAGES ? ['./app'] : []);
 const NAVIGASI_MAKS_MS = 3000;
