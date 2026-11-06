@@ -38,7 +38,7 @@
 /* v20 (2026-10-15, dashboard v1181): berkas BERSIDIK di nama (`kamus-<12 hex>.js`, dari bangun-cepat.py) = isinya tidak
    pernah berubah -> cache dulu TANPA unduh ulang di latar (jalur umum mengunduh ulang 266 KB tiap buka). Menyimpan satu
    menghapus saudara lama berawalan sama, jadi cache tidak menumpuk satu kamus per rilis. */
-const VERSI = 'padma-pembungkus-v20';
+const VERSI = 'padma-pembungkus-v21';
 const ABADI = /\/([a-z]+)-[0-9a-f]{12}\.js$/;
 const UNDUHAN = 'padma-unduhan';
 const CDN = 'padma-cdn-v1';
