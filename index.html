@@ -76,8 +76,13 @@
   if (lg) h.style.setProperty('--muat-gelap', lg);
   if (t !== 'dark' && t !== 'light') t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
   h.setAttribute('data-tema', t);
+  /* KONTRAS (dashboard v1355, pemilik: "loading depan logo padma dan first jet bisa ikut setingan kontras ga"): Lembut /
+     Redup dari titipan dashboard (padma_kontras) -> latar + warna logo layar muat ikut token dashboard. */
+  var kontras = null;
+  try { kontras = (JSON.parse(localStorage.getItem('padmaTitip') || '{}') || {}).padma_kontras; } catch (e) {}
+  if (kontras === 'lembut' || kontras === 'redup') h.setAttribute('data-kontras', kontras);
   var mb = document.getElementById('warnaBilah');
-  if (mb) mb.setAttribute('content', t === 'dark' ? (lg || "#16181C") : '#ffffff');
+  if (mb) mb.setAttribute('content', t === 'dark' ? (lg || "#16181C") : kontras === 'redup' ? '#D6DBE2' : kontras === 'lembut' ? '#E8EBF0' : '#ffffff');
   if (b) h.style.setProperty('--bawah', b);
 })();
 </script>
@@ -89,6 +94,11 @@
 <style>
   :root { --bawah: #FFFFFF; --muat-latar: #fff; --muat-isi: #000; }
   html[data-tema="dark"] { --bawah: #16181C; --muat-latar: var(--muat-gelap, #16181C); --muat-isi: #fff; }
+  /* Kontras (dashboard v1355): angka = token dashboard (--bg/--text, docs/ui/tema-aksen-skala.md § Kontras). */
+  html[data-kontras="lembut"]:not([data-tema="dark"]) { --muat-latar: #E8EBF0; }
+  html[data-kontras="redup"]:not([data-tema="dark"]) { --muat-latar: #D6DBE2; --muat-isi: #1C2430; }
+  html[data-kontras="lembut"][data-tema="dark"] { --muat-isi: #C9CED7; }
+  html[data-kontras="redup"][data-tema="dark"] { --muat-isi: #B3B9C3; }
   /* LAYAR MUAT IKUT TEMA (2026-09-25, "animasi di awal mengikuti tema? ... invert
      color yg putih"): terang = latar putih, logo + arsiran hitam; gelap = seperti
      dulu. Siluet logo customer berupa PNG putih -> dibalik di tema terang. */
